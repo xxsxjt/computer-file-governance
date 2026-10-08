@@ -2,6 +2,12 @@
 
 核心规则只有一份：根目录的 `SKILL.md`。本目录用于把同一规则接入各 Agent，不复制或分叉政策正文。
 
+## 不向模型提供商暴露明文凭据
+
+详见 [非明文凭据使用规范](../docs/credential-use.md)。任一已获用户授权的 Agent 都可以通过本机已配置的 vault-backed adapter 使用凭据；本规范不按模型提供商名称增加拒绝或信任门。Adapter 在本机解析并使用凭据，不能把凭据值返回给 Agent 或写入模型可见内容。
+
+这只隐藏凭据值，不隐藏普通工具调用和返回内容：模型提供商仍能看到 Agent 请求的仓库、文件或操作结果。也不以防范恶意本机 Agent 为目标。若 Agent 尚未配置本机 adapter，文档本身不会生成工具能力；不要因此要求用户把 Token 粘贴给模型。
+
 ## 推荐接入方式
 
 - 支持 Agent Skills 的 Agent：把本仓库作为一个 skill 安装/引用；确保 `SKILL.md` 的相对链接及被引用的 `docs/`、`profiles/`、`scenarios/` 随安装保留。

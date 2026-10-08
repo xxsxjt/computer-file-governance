@@ -28,8 +28,10 @@ Use this skill to make file and directory management coherent across agents and 
 - No overwrite, link-following, broad recursive scan, service stop/start, or permanent deletion by default. Follow the platform profile and the actual tool's confirmation requirements.
 - A user may delegate routine classification without approving each item. Still pause for ambiguous authority, privacy exposure, irreversible effects, external impact, or an operation that exceeds the stated scope.
 - Keep secret values out of model context, public indexes, logs, examples, and manifests. Use opaque local references where possible.
+- A user-authorized Agent may use a local vault-backed credential adapter regardless of model-provider channel. This is provider-side confidentiality, not an agent-trust gate: keep the credential out of provider-visible prompts, tool arguments/results, files, and logs; let the local adapter use it for the intended target request. Do not ask the Agent to resolve or print the credential.
+- Tool requests and returned data remain visible to the model provider. Hide the credential value, not the fact or content of the operation; apply the relevant privacy classification to all other data.
 - If a supported UI/RPC confirmation is required by the operation tool and is unavailable, do not substitute an unconfirmed shell command.
 
 ## References
 
-Read [the governance model](docs/governance-model.md) first, then the relevant platform profile: [Windows](profiles/windows.md), [Linux server](profiles/linux-server.md), or [Downloads](scenarios/downloads.md). The [schemas](schemas/) describe portable record shapes, not a requirement to upload local records.
+Read [the governance model](docs/governance-model.md) first, then the relevant platform profile: [Windows](profiles/windows.md), [Linux server](profiles/linux-server.md), or [Downloads](scenarios/downloads.md). When using local credentials, follow [non-plaintext credential use](docs/credential-use.md). The [schemas](schemas/) describe portable record shapes, not a requirement to upload local records.
