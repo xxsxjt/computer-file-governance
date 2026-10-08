@@ -4,7 +4,7 @@ description: Apply when cataloging, classifying, standardizing, archiving, reloc
 license: AGPL-3.0-only
 compatibility: Works with Agent Skills-compatible systems; platform-specific operations require a matching profile and an authorized filesystem or remote-management tool.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Computer File Governance
@@ -13,7 +13,7 @@ Use this skill to make file and directory management coherent across agents and 
 
 ## First-use setup
 
-When the user first provides this Skill's path or repository URL, follow [the persistent Agent onboarding procedure](docs/agent-onboarding.md). Read the guide and relevant references, then register a durable pointer in the actual auto-loaded global Agent instructions so later sessions can load it without another user reminder. Verify the startup path rather than assuming a file or environment variable is automatically read. Do not add technical access gates or provider restrictions; this Skill is a behavior standard.
+When the user first provides this Skill's path or repository URL to this Agent, treat that user-designated repository as the sole canonical source. Read its full `SKILL.md` and linked references, then register only a stable pointer in a verified shared auto-loaded instruction entry if this Agent actually reads it; otherwise use this Agent's own auto-loaded global instructions. Do not copy/vendor the Skill or its references into an Agent-private skills/plugins/prompts directory. If a native loader requires such a directory, use only a verified pointer/stub or supported link to the canonical source; if it cannot load that source, explain the limitation rather than creating a duplicate. This onboarding applies only to the current Agent; do not configure other Agents unless the user separately asks. Follow [the persistent Agent onboarding procedure](docs/agent-onboarding.md) and verify the next reload/new-session path.
 
 ## Required workflow
 
