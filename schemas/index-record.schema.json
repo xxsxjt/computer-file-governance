@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Computer File Governance Index Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_id", "item_ref", "item_kind", "owner", "role", "privacy", "lifecycle", "confidence", "updated_at"],
+  "properties": {
+    "record_id": { "type": "string", "minLength": 1 },
+    "item_ref": { "type": "string", "minLength": 1, "description": "Machine-local reference or opaque identifier. Do not publish real machine paths." },
+    "item_kind": { "enum": ["file", "directory", "link", "mount", "logical_resource", "unknown"] },
+    "owner": { "enum": ["personal", "system", "application", "project", "team", "external", "unknown"] },
+    "role": { "enum": ["source", "active_work", "reference", "generated", "application_state", "cache", "archive", "inbox", "temporary", "backup", "unknown"] },
+    "privacy": { "enum": ["public", "internal", "restricted", "secret", "unknown"] },
+    "lifecycle": { "enum": ["active", "working", "reference", "archive", "rebuildable", "hold", "retired", "unknown"] },
+    "purpose": { "type": "string" },
+    "canonical_ref": { "type": "string", "description": "Local reference to the authoritative location for this role, if one exists." },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "content_fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest"],
+      "properties": {
+        "algorithm": { "enum": ["sha256", "sha512"] },
+        "digest": { "type": "string", "pattern": "^[A-Fa-f0-9]+$" }
+      }
+    },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

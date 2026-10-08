@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Computer File Governance Transaction Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["transaction_id", "created_at", "status", "operation", "approval", "items", "verification", "rollback"],
+  "properties": {
+    "transaction_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["planned", "staged", "applied", "verified", "rolled_back", "outcome_unknown", "failed"] },
+    "operation": { "enum": ["inventory", "copy", "move", "rename", "archive", "permission_change", "delete", "other"] },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "method", "approved_at"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1 },
+        "method": { "enum": ["explicit_user_request", "ui_confirmation", "rpc_confirmation", "policy_read_only", "not_required"] },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "approver_ref": { "type": "string", "description": "Use a non-identifying local reference when identity is sensitive." }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_ref", "result"],
+        "properties": {
+          "source_ref": { "type": "string", "minLength": 1 },
+          "destination_ref": { "type": "string" },
+          "expected_bytes": { "type": "integer", "minimum": 0 },
+          "source_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+          "result": { "enum": ["pending", "applied", "verified", "held", "failed", "unknown"] },
+          "result_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checked_at"],
+      "properties": {
+        "status": { "enum": ["not_run", "passed", "failed", "partial", "unknown"] },
+        "checked_at": { "type": "string", "format": "date-time" },
+        "checks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "instructions"],
+      "properties": {
+        "available": { "type": "boolean" },
+        "instructions": { "type": "string" },
+        "manifest_ref": { "type": "string" }
+      }
+    }
+  }
+}
