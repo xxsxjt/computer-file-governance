@@ -26,15 +26,31 @@
 - 路径映射、个人目录清单、服务器拓扑及真实 manifest 属于机器本地数据，应按 privacy 分类保存。
 - 应用托管目录、数据库、包管理器内容、容器卷和系统目录要识别其 owner 与生命周期，不能只凭路径名自行移动。
 
-## 操作状态
+## 状态模型与词典映射
 
-推荐将每批变更记录为：
+本规范区分两个正交维度的状态，避免将资产长期演进阶段与单次变更事务混淆：
 
-`DISCOVERED → CLASSIFIED → PREFLIGHTED → STAGED → VERIFIED → INDEXED → ACTIVE | ARCHIVED`
-
-用途或权限未明确时进入 `UNRESOLVED_HOLD`。已发生但结果不确定时进入 `OUTCOME_UNKNOWN`，先核对真实状态，再决定重试或回滚；不得盲目重复可能有副作用的命令。
+1. **治理对象推进阶段（Lifecycle & Onboarding Phases）**：用于跟踪目录、项目或资产从发现到纳管的过程：
+   `DISCOVERED → CLASSIFIED → PREFLIGHTED → STAGED → VERIFIED → INDEXED → ACTIVE | ARCHIVED`
+   当用途、所有权或边界未明确时保持 `UNRESOLVED_HOLD`。宿主工作区可在此基础上细化状态词（例如将 `ACTIVE` 细分为 `ACTIVE_CANONICAL`、`KEEP_IN_PLACE`、`ROLLBACK_RETAINED`），只须在宿主标准中保持明确映射。
+2. **变更事务执行状态（Transaction Manifest Status）**：用于记录单次有界变更批次的执行与核验结果，对应 `schemas/transaction-manifest.schema.json`：
+   - 顶层 `status`：`planned`、`staged`、`applied`、`verified`、`rolled_back`、`outcome_unknown`、`failed`。
+   - 条目 `items[].result`：`pending`、`applied`、`verified`、`held`、`rolled_back`、`failed`、`unknown`。
+   当操作已发起但真实结果尚未确认时，必须标记为 `OUTCOME_UNKNOWN`（Schema 中对应 `"outcome_unknown"`），先核对文件系统真实后置状态，再决定恢复或重试；不得盲目重复可能有副作用的命令。
 
 事务至少关联稳定 ID、操作者/批准范围、时间、操作类型、源/目标本地引用、碰撞检查、预期及实际结果、校验方法、状态和回滚说明。涉及内容完整性时记录算法与摘要；摘要不代替权限与语义检查。
+
+## 宿主二元隐私边界映射
+
+本模型的 `privacy` 轴采用 5 级细粒度分类（`public`、`internal`、`restricted`、`secret`、`unknown`）。当宿主环境采用二元隐私边界（仅区分 `PUBLIC` 与 `PRIVATE_RESTRICTED`）时，适配器须按以下保守规则映射：
+
+| 通用治理 `privacy` | 宿主二元分类 | 处理与存放要求 |
+| --- | --- | --- |
+| `public` | `PUBLIC` | 仅限已脱敏、不含机器真实路径/账户/清单/凭据的通用规范、schema、合成示例与公开代码 |
+| `internal` | `PRIVATE_RESTRICTED`（或宿主受控内部区） | 本机路径映射、运行日志、回滚证据、工程内部状态；不得推入公开仓库 |
+| `restricted` | `PRIVATE_RESTRICTED` | 个人数据、完整目录清单、会话历史、真实 transaction manifest；按当次任务授权访问 |
+| `secret` | `PRIVATE_RESTRICTED`（凭据保险库） | 仅存受控 opaque 引用，由本机 vault-backed adapter 解析，明文绝不进入模型上下文或日志 |
+| `unknown` | `PRIVATE_RESTRICTED` + `UNRESOLVED_HOLD` | 未完成分类前默认按受限边界保护，不读取正文、不外发 |
 
 ## 执行原则
 
@@ -47,7 +63,7 @@
 
 ## Schema 与执行边界
 
-JSON Schema 校验记录结构、枚举、格式、摘要长度，并拒绝引用中显式的 `..` 路径段。它不能证明引用解析后位于授权根目录，也不能解析 symlink/junction/reparse point、识别挂载边界或确认目标不存在。执行适配器必须使用目标主机的路径语义做规范化和根目录包含检查，按策略检查链接/挂载及目标冲突，并在执行前失败关闭。通过 Schema 校验不等于获得操作授权，也不等于文件操作或回滚已成功。
+JSON Schema 校验记录结构、枚举、格式、摘要长度、跨字段状态不变量（如搬迁/复制操作必填 `destination_ref`、`verified` 状态必须具备 `passed` 校验结果），并拒绝引用中显式的 `..` 路径段、URL 编码的 `%2e%2e`、控制字符与纯空白字符串。但它不能证明引用解析后位于授权根目录，也不能解析 symlink/junction/reparse point、识别挂载边界或确认目标不存在。执行适配器（可参考本仓库 `lib/governance-validator.mjs`）必须使用目标主机的路径语义做规范化和根目录包含检查，按策略检查链接/挂载及目标冲突，并在执行前失败关闭。通过 Schema 校验不等于获得操作授权，也不等于文件操作或回滚已成功。
 
 合成夹具覆盖 link/mount 保持 hold、目标冲突时不执行、失败、回滚和结果未知等记录形态；它们只测试数据契约，不触碰真实文件系统。
 

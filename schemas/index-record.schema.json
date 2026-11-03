@@ -5,8 +5,8 @@
     "localReference": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!.*(?:^|[:/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
-      "description": "A machine-local reference or opaque identifier. Literal parent-directory segments are rejected; this does not prove filesystem containment or resolve links/mounts."
+      "pattern": "^(?=.*\\S)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:%2[eE]){2})(?!.*(?:^|[:/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
+      "description": "A machine-local reference or opaque identifier. Whitespace-only strings, control characters, URL-encoded parent segments, and literal parent-directory segments are rejected; this does not prove filesystem containment or resolve links/mounts."
     }
   },
   "type": "object",

@@ -6,6 +6,9 @@ coverage/
 .env
 .env.*
 !.env.example
+HANDOFF.md
+*.local.md
+*.local.json
 private/
 local-inventory*/
 local-manifests*/

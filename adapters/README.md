@@ -35,5 +35,8 @@
 - 候选变更 dry-run、目标冲突拒绝、明确的用户确认；无 UI 时 fail closed。
 - 批次 ID、跨进程互斥、来源/目标记录、结果校验、回滚或 `OUTCOME_UNKNOWN`。
 - 私有本地索引与 manifest 的持久化路径；日志和错误信息脱敏。
+- 宿主隐私与状态映射：当宿主采用 `PUBLIC` / `PRIVATE_RESTRICTED` 二元隐私边界时，遵循 [治理模型](../docs/governance-model.md) 中的保守映射规则。
+
+本仓库在 [`lib/governance-validator.mjs`](../lib/governance-validator.mjs) 与 [`bin/cfg-validate.mjs`](../bin/cfg-validate.mjs) 中提供了零副作用的参考校验实现，涵盖索引/事务 Schema 校验、授权根目录包含检查、`lstat` 符号链接/重解析点检测、目标冲突失败关闭预检以及 SHA-256/SHA-512 指纹核对。
 
 公开 adapter 实现不得包含真实机器路径、用户身份、远程主机、授权令牌或实际文件清单。

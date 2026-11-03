@@ -13,7 +13,7 @@
       "source_ref": "fixture:source-004",
       "destination_ref": "fixture:destination-004",
       "expected_bytes": 23,
-      "result": "verified",
+      "result": "rolled_back",
       "note": "Synthetic rollback state verified; fixture only."
     }
   ],

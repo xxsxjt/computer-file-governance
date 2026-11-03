@@ -5,8 +5,8 @@
     "localReference": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!.*(?:^|[:/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
-      "description": "A machine-local reference or opaque identifier. Literal parent-directory segments are rejected; this does not prove filesystem containment or resolve links/mounts."
+      "pattern": "^(?=.*\\S)(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:%2[eE]){2})(?!.*(?:^|[:/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
+      "description": "A machine-local reference or opaque identifier. Whitespace-only strings, control characters, URL-encoded parent segments, and literal parent-directory segments are rejected; this does not prove filesystem containment or resolve links/mounts."
     }
   },
   "type": "object",
@@ -40,7 +40,7 @@
           "destination_ref": { "$ref": "#/$defs/localReference" },
           "expected_bytes": { "type": "integer", "minimum": 0 },
           "source_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
-          "result": { "enum": ["pending", "applied", "verified", "held", "failed", "unknown"] },
+          "result": { "enum": ["pending", "applied", "verified", "held", "rolled_back", "failed", "unknown"] },
           "result_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
           "note": { "type": "string" }
         }
@@ -66,5 +66,118 @@
         "manifest_ref": { "$ref": "#/$defs/localReference" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": { "type": "string", "enum": ["copy", "move", "rename", "archive"] }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "destination_ref": { "$ref": "#/$defs/localReference" }
+              },
+              "required": ["destination_ref"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "type": "string", "const": "planned" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "verification": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string", "const": "not_run" }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string", "enum": ["pending", "held"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "type": "string", "const": "verified" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "verification": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string", "const": "passed" }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string", "enum": ["verified", "held"] }
+              }
+            },
+            "contains": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string", "const": "verified" }
+              },
+              "required": ["result"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "type": "string", "const": "rolled_back" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string", "enum": ["rolled_back", "held", "pending"] }
+              }
+            },
+            "contains": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string", "const": "rolled_back" }
+              },
+              "required": ["result"]
+            }
+          }
+        }
+      }
+    }
+  ]
 }

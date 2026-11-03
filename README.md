@@ -10,11 +10,13 @@
 - [治理模型](docs/governance-model.md)：分类轴、索引约束、变更状态和证据要求。
 - [非明文凭据使用](docs/credential-use.md)：通过本机 vault-backed adapter 使用凭据，不让 Token 进入模型提供商可见内容。
 - [Agent onboarding](docs/agent-onboarding.md)：新 Agent 首次收到路径后，如何在当前 Agent 的自动加载入口登记指针，并保持唯一规范源。
+- [主管编排与任务契约](docs/supervisor-orchestration-design.md)：主管层、编排运行时与文件治理适配器的三层职责与 Task Envelope。
 - [Windows profile](profiles/windows.md)：本地 Windows 路径、Known Folder、重解析点和应用所有权注意事项。
 - [Linux server profile](profiles/linux-server.md)：服务器只读盘点、目录角色、服务/挂载点及远程权限边界。
 - [Downloads 场景](scenarios/downloads.md)：将下载目录作为收件箱治理，不做全量搬运。
 - [Agent adapters](adapters/README.md)：将同一核心流程接入不同 Agent，不另造一套冲突规则。
 - [JSON Schema](schemas/)：机器索引记录和变更事务记录格式。
+- [只读校验与预检库](lib/governance-validator.mjs) 及 CLI（`bin/cfg-validate.mjs`）：Schema 契约校验、授权根目录包含检查、链接/冲突预检与公开树脱敏扫描。
 
 ## 使用
 

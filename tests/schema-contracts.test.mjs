@@ -97,6 +97,59 @@ test("schemas reject malformed dates, invalid digests, and unknown fields", asyn
 
   const extraTransactionField = { ...transactionFixture, unreviewed: true };
   assert.equal(validators.transaction(extraTransactionField), false);
+
+  const whitespaceRef = structuredClone(indexFixture);
+  whitespaceRef.item_ref = "   ";
+  assert.equal(validators.index(whitespaceRef), false);
+
+  const controlCharRef = structuredClone(indexFixture);
+  controlCharRef.item_ref = "fixture:bad\u0000ref";
+  assert.equal(validators.index(controlCharRef), false);
+
+  const encodedTraversalRef = structuredClone(indexFixture);
+  encodedTraversalRef.item_ref = "fixture://root/%2e%2e/outside";
+  assert.equal(validators.index(encodedTraversalRef), false);
+});
+
+test("transaction manifest enforces cross-field status and destination invariants", async () => {
+  const planned = await readJson(new URL("transaction-manifest-planned.valid.json", fixtureRoot));
+  const rolledBack = await readJson(new URL("transaction-manifest-rolled-back.valid.json", fixtureRoot));
+
+  const moveMissingDestination = structuredClone(planned);
+  delete moveMissingDestination.items[0].destination_ref;
+  assert.equal(validators.transaction(moveMissingDestination), false);
+
+  const inventoryWithoutDestination = structuredClone(planned);
+  inventoryWithoutDestination.operation = "inventory";
+  delete inventoryWithoutDestination.items[0].destination_ref;
+  assert.equal(validators.transaction(inventoryWithoutDestination), true);
+
+  const plannedWithVerifiedItem = structuredClone(planned);
+  plannedWithVerifiedItem.items[0].result = "verified";
+  assert.equal(validators.transaction(plannedWithVerifiedItem), false);
+
+  const verifiedWithoutPassedCheck = structuredClone(planned);
+  verifiedWithoutPassedCheck.status = "verified";
+  verifiedWithoutPassedCheck.items[0].result = "verified";
+  verifiedWithoutPassedCheck.verification.status = "not_run";
+  assert.equal(validators.transaction(verifiedWithoutPassedCheck), false);
+
+  const validVerified = structuredClone(verifiedWithoutPassedCheck);
+  validVerified.verification.status = "passed";
+  assert.equal(validators.transaction(validVerified), true, JSON.stringify(validators.transaction.errors));
+
+  const verifiedWithPendingItem = structuredClone(validVerified);
+  verifiedWithPendingItem.items.push({
+    source_ref: "fixture:source-extra",
+    destination_ref: "fixture:dest-extra",
+    result: "pending",
+  });
+  assert.equal(validators.transaction(verifiedWithPendingItem), false);
+
+  assert.equal(validators.transaction(rolledBack), true);
+  const rolledBackMisleadingVerified = structuredClone(rolledBack);
+  rolledBackMisleadingVerified.items[0].result = "verified";
+  assert.equal(validators.transaction(rolledBackMisleadingVerified), false);
 });
 
 test("boundary and conflict fixtures record non-execution rather than claiming runtime enforcement", async () => {

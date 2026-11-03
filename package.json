@@ -3,6 +3,26 @@
   "version": "0.2.0",
   "private": false,
   "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./lib/governance-validator.mjs",
+    "./schemas/*": "./schemas/*"
+  },
+  "bin": {
+    "cfg-validate": "./bin/cfg-validate.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "adapters/",
+    "bin/",
+    "docs/",
+    "lib/",
+    "profiles/",
+    "scenarios/",
+    "schemas/"
+  ],
   "scripts": {
     "test": "node --test"
   },
