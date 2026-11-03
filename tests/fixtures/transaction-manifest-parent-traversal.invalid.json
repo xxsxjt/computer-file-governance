@@ -1,0 +1,26 @@
+{
+  "transaction_id": "fixture-transaction-parent-traversal-001",
+  "created_at": "2026-10-11T18:00:00Z",
+  "status": "planned",
+  "operation": "copy",
+  "approval": {
+    "scope": "Synthetic fixture only.",
+    "method": "explicit_user_request",
+    "approved_at": "2026-10-11T17:59:00Z"
+  },
+  "items": [
+    {
+      "source_ref": "fixture://authorized-root/../outside",
+      "destination_ref": "fixture:destination-006",
+      "result": "pending"
+    }
+  ],
+  "verification": {
+    "status": "not_run",
+    "checked_at": "2026-10-11T18:00:00Z"
+  },
+  "rollback": {
+    "available": true,
+    "instructions": "Synthetic fixture only; not executable."
+  }
+}

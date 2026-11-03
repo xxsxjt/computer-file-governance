@@ -55,7 +55,7 @@ computer-file-governance/
 `DISCOVERED → CLASSIFIED → PREFLIGHTED → STAGED → VERIFIED → INDEXED → ACTIVE | ARCHIVED`
 另有 `UNRESOLVED_HOLD`、`OUTCOME_UNKNOWN`
 
-> ⚠️ 这与 `D:/AGENT-CORE/WORKSPACE-INDEX.md` 的**十态状态机不兼容**
+> ⚠️ 这与 `D:/AGENT/CORE/WORKSPACE-INDEX.md` 的**十态状态机不兼容**
 > （INDEX 有 `COPY_VERIFIED_SOURCE_RETAINED`，没有 `ARCHIVED`）。
 > 两套都自称权威，**进会话头时选哪套没有记录**。这是一个待解决的不一致。
 

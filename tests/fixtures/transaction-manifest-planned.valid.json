@@ -1,0 +1,30 @@
+{
+  "transaction_id": "fixture-transaction-planned-001",
+  "created_at": "2026-10-11T18:00:00Z",
+  "status": "planned",
+  "operation": "move",
+  "approval": {
+    "scope": "Synthetic fixture only.",
+    "method": "explicit_user_request",
+    "approved_at": "2026-10-11T17:59:00Z"
+  },
+  "items": [
+    {
+      "source_ref": "fixture:source-001",
+      "destination_ref": "fixture:destination-001",
+      "expected_bytes": 42,
+      "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "result": "pending",
+      "note": "Synthetic plan; no filesystem operation is performed."
+    }
+  ],
+  "verification": {
+    "status": "not_run",
+    "checked_at": "2026-10-11T18:00:00Z",
+    "checks": []
+  },
+  "rollback": {
+    "available": true,
+    "instructions": "Synthetic fixture only; not executable."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "record_id": "fixture-record-parent-traversal-001",
+  "item_ref": "fixture://authorized-root/../outside",
+  "item_kind": "file",
+  "owner": "project",
+  "role": "active_work",
+  "privacy": "internal",
+  "lifecycle": "working",
+  "confidence": "low",
+  "updated_at": "2026-10-11T18:00:00Z"
+}

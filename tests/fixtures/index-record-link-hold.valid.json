@@ -1,0 +1,13 @@
+{
+  "record_id": "fixture-record-link-001",
+  "item_ref": "fixture:link-boundary-001",
+  "item_kind": "link",
+  "owner": "unknown",
+  "role": "unknown",
+  "privacy": "unknown",
+  "lifecycle": "hold",
+  "purpose": "Synthetic link boundary held for classification.",
+  "confidence": "low",
+  "evidence": ["Synthetic link record; target not traversed."],
+  "updated_at": "2026-10-11T18:00:00Z"
+}

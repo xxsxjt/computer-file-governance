@@ -1,0 +1,29 @@
+{
+  "transaction_id": "fixture-transaction-rolled-back-001",
+  "created_at": "2026-10-11T18:00:00Z",
+  "status": "rolled_back",
+  "operation": "move",
+  "approval": {
+    "scope": "Synthetic fixture only.",
+    "method": "explicit_user_request",
+    "approved_at": "2026-10-11T17:59:00Z"
+  },
+  "items": [
+    {
+      "source_ref": "fixture:source-004",
+      "destination_ref": "fixture:destination-004",
+      "expected_bytes": 23,
+      "result": "verified",
+      "note": "Synthetic rollback state verified; fixture only."
+    }
+  ],
+  "verification": {
+    "status": "passed",
+    "checked_at": "2026-10-11T18:00:00Z",
+    "checks": ["Synthetic source and destination state restored."]
+  },
+  "rollback": {
+    "available": true,
+    "instructions": "Synthetic rollback instructions; not executable."
+  }
+}

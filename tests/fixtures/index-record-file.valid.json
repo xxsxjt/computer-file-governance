@@ -1,0 +1,18 @@
+{
+  "record_id": "fixture-record-file-001",
+  "item_ref": "fixture:active-work-001",
+  "item_kind": "file",
+  "owner": "project",
+  "role": "active_work",
+  "privacy": "internal",
+  "lifecycle": "working",
+  "purpose": "Synthetic active-work record.",
+  "canonical_ref": "fixture:project-source-001",
+  "confidence": "high",
+  "evidence": ["Synthetic fixture; no machine-specific path."],
+  "content_fingerprint": {
+    "algorithm": "sha256",
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "updated_at": "2026-10-11T18:00:00Z"
+}

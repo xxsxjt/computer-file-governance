@@ -1,0 +1,28 @@
+{
+  "transaction_id": "fixture-transaction-unknown-001",
+  "created_at": "2026-10-11T18:00:00Z",
+  "status": "outcome_unknown",
+  "operation": "move",
+  "approval": {
+    "scope": "Synthetic fixture only.",
+    "method": "explicit_user_request",
+    "approved_at": "2026-10-11T17:59:00Z"
+  },
+  "items": [
+    {
+      "source_ref": "fixture:source-005",
+      "destination_ref": "fixture:destination-005",
+      "result": "unknown",
+      "note": "Synthetic interrupted operation; inspect state before retry."
+    }
+  ],
+  "verification": {
+    "status": "unknown",
+    "checked_at": "2026-10-11T18:00:00Z",
+    "checks": ["Synthetic post-state is not yet reconciled."]
+  },
+  "rollback": {
+    "available": false,
+    "instructions": "Inspect actual state before retrying; fixture only."
+  }
+}

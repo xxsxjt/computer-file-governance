@@ -1,6 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Computer File Governance Transaction Manifest",
+  "$defs": {
+    "localReference": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*(?:^|[:/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
+      "description": "A machine-local reference or opaque identifier. Literal parent-directory segments are rejected; this does not prove filesystem containment or resolve links/mounts."
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": ["transaction_id", "created_at", "status", "operation", "approval", "items", "verification", "rollback"],
@@ -28,8 +36,8 @@
         "additionalProperties": false,
         "required": ["source_ref", "result"],
         "properties": {
-          "source_ref": { "type": "string", "minLength": 1 },
-          "destination_ref": { "type": "string" },
+          "source_ref": { "$ref": "#/$defs/localReference" },
+          "destination_ref": { "$ref": "#/$defs/localReference" },
           "expected_bytes": { "type": "integer", "minimum": 0 },
           "source_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
           "result": { "enum": ["pending", "applied", "verified", "held", "failed", "unknown"] },
@@ -55,7 +63,7 @@
       "properties": {
         "available": { "type": "boolean" },
         "instructions": { "type": "string" },
-        "manifest_ref": { "type": "string" }
+        "manifest_ref": { "$ref": "#/$defs/localReference" }
       }
     }
   }
