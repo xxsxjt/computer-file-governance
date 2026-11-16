@@ -42,3 +42,5 @@
 [`bin/cfg-find.mjs`](../bin/cfg-find.mjs) 提供本地元数据清单检索；[`lib/governance-executor.mjs`](../lib/governance-executor.mjs) 与 [`bin/cfg-tidy.mjs`](../bin/cfg-tidy.mjs) 提供 `plan` / `apply` / `rollback` 三态事务执行器。执行器仍要求调用方给出授权根目录与本机证据目录，且只在 `apply` 时产生变更。
 
 公开 adapter 实现不得包含真实机器路径、用户身份、远程主机、授权令牌或实际文件清单。
+
+只读与可逆的搜索/同步/版本控制共存示例见 [adapters/examples/README.md](examples/README.md)。第三方工具输出只作为 evidence，不覆盖统一规范源；只有 `cfg-tidy apply` 产生变更。
