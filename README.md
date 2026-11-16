@@ -17,6 +17,8 @@
 - [Agent adapters](adapters/README.md)：将同一核心流程接入不同 Agent，不另造一套冲突规则。
 - [JSON Schema](schemas/)：机器索引记录和变更事务记录格式。
 - [只读校验与预检库](lib/governance-validator.mjs) 及 CLI（`bin/cfg-validate.mjs`）：Schema 契约校验、授权根目录包含检查、链接/冲突预检与公开树脱敏扫描。
+- [清单检索器](bin/cfg-find.mjs)：在本地受限的 gzip JSONL 元数据清单里按文件名或路径片段检索，输出绝对路径；清单路径由 `--summary` 或 `CFG_INVENTORY_SUMMARY` 提供，不写死在框架中。
+- [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；不覆盖目标、不跟随链接、不删除原件。
 
 ## 使用
 
@@ -29,6 +31,8 @@
 ## 当前阶段
 
 0.2.0 明确统一规范源与首次持久接入流程，并建立跨 Agent 核心流程、Windows 与 Linux 服务器 profile、Downloads 场景及基础 schema。这里的服务器规则是治理指导，不是生产级远程执行器；具体访问与变更仍须由本机安全工具和任务授权控制。
+
+0.3 起提供最小可用的执行闭环：清单检索、dry-run 计划、有界事务执行、哈希校验与回滚。元数据清单是某一时点的快照，扫描之后新建的文件不会出现在旧清单中；按当前任务授权重新生成本地清单后再检索，不要把旧清单当作实时文件系统。
 
 ## License
 

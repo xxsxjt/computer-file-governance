@@ -1,6 +1,6 @@
 {
   "name": "computer-file-governance",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -9,7 +9,9 @@
     "./schemas/*": "./schemas/*"
   },
   "bin": {
-    "cfg-validate": "./bin/cfg-validate.mjs"
+    "cfg-validate": "./bin/cfg-validate.mjs",
+    "cfg-find": "./bin/cfg-find.mjs",
+    "cfg-tidy": "./bin/cfg-tidy.mjs"
   },
   "files": [
     "SKILL.md",

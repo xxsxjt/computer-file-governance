@@ -39,4 +39,6 @@
 
 本仓库在 [`lib/governance-validator.mjs`](../lib/governance-validator.mjs) 与 [`bin/cfg-validate.mjs`](../bin/cfg-validate.mjs) 中提供了零副作用的参考校验实现，涵盖索引/事务 Schema 校验、授权根目录包含检查、`lstat` 符号链接/重解析点检测、目标冲突失败关闭预检以及 SHA-256/SHA-512 指纹核对。
 
+[`bin/cfg-find.mjs`](../bin/cfg-find.mjs) 提供本地元数据清单检索；[`lib/governance-executor.mjs`](../lib/governance-executor.mjs) 与 [`bin/cfg-tidy.mjs`](../bin/cfg-tidy.mjs) 提供 `plan` / `apply` / `rollback` 三态事务执行器。执行器仍要求调用方给出授权根目录与本机证据目录，且只在 `apply` 时产生变更。
+
 公开 adapter 实现不得包含真实机器路径、用户身份、远程主机、授权令牌或实际文件清单。
