@@ -35,7 +35,7 @@
 
 - [x] P2-1 发布工程：CI、tag/release、CHANGELOG、SECURITY、CONTRIBUTING、CODEOWNERS、许可证与第三方来源核查。（框架合同检查点；本机实时状态见本地台账）
 - [x] P2-2 开发者体验：类型声明、exports/API 稳定性语义、错误码、覆盖率、benchmark、fuzz、SBOM/依赖审计、日志规范、国际化。（框架合同检查点；本机实时状态见本地台账）
-- [ ] P2-3 企业控制：RBAC 映射、审计链防篡改、retention/legal hold、密钥轮换边界、SLA、可观测性、合规证据导出和事故预案。
+- [x] P2-3 企业控制：RBAC 映射、审计链防篡改、retention/legal hold、密钥轮换边界、SLA、可观测性、合规证据导出和事故预案。（框架合同检查点；本机实时状态见本地台账）
 
 ## P3 宿主对齐与发布决策
 

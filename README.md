@@ -30,6 +30,7 @@
 - [第三方适配示例](adapters/examples/README.md)：搜索、同步与版本控制工具只提供证据或只读结果；写操作仍由有界事务控制。
 - [变更记录](CHANGELOG.md)、[安全政策](SECURITY.md) 与 [贡献规范](CONTRIBUTING.md)：发布变更、漏洞报告与公开边界的维护入口。
 - [依赖与第三方来源审计](docs/dependency-audit.md)：运行时零 npm 依赖，开发依赖锁定且不在发布包内。
+- [企业控制映射](docs/enterprise-controls.md)：RBAC、哈希审计链、retention/legal hold、SLO 与合规证据导出的框架级边界。
 - [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；部分失败时逆序 best-effort 恢复已应用项并保守标记 `outcome_unknown`；不覆盖目标、不跟随链接、不删除原件。
 - [合成索引基准](scripts/benchmark-secondary-index.mjs)：`npm run bench:index -- --rows 2000 --queries 20`，只生成合成元数据，测量二级索引查询与线性查询的 p50/p95，不读取真实清单。
 

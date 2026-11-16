@@ -10,6 +10,7 @@ const expectedExports = {
   "./incremental-refresh": "./lib/incremental-refresh.mjs",
   "./classification-suggestions": "./lib/classification-suggestions.mjs",
   "./user-report": "./lib/user-report.mjs",
+  "./enterprise-controls": "./lib/enterprise-controls.mjs",
   "./schemas/*": "./schemas/*",
 };
 
