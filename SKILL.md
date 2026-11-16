@@ -4,7 +4,7 @@ description: Apply when cataloging, classifying, standardizing, archiving, reloc
 license: AGPL-3.0-only
 compatibility: Works with Agent Skills-compatible systems; platform-specific operations require a matching profile and an authorized filesystem or remote-management tool.
 metadata:
-  version: "0.2.0"
+  version: "0.4.0"
 ---
 
 # Computer File Governance
@@ -22,7 +22,7 @@ When the user first provides this Skill's path or repository URL to this Agent, 
 
 For a Downloads root, any inventory or search of the whole root—including a shallow direct-child listing—is restricted to the locally designated privacy-steward Agent operating on a model channel explicitly trusted by the machine's private policy, and only when the current task authorizes the whole-root scope. Recursive inventory must still have explicit bounds. Other Agents and non-trusted channels must not enumerate, search, glob, or recursively scan the root; they may inspect or operate only within an exact file path or concrete child-folder subtree supplied by the task, without enumerating or searching the root, parent, siblings, or undisclosed paths. Supplying the Downloads root alone does not authorize them to inventory it. A path alone does not authorize reading or sending file contents; any separately authorized content handling must still follow the data's privacy classification and current task scope.
 3. **Classify on separate axes.** For each item or directory, track its owner, purpose/role, privacy, lifecycle, confidence, and evidence. Do not collapse “old”, “duplicate”, “large”, “temporary”, and “unneeded” into one judgment. Use `UNRESOLVED_HOLD` when purpose or ownership is uncertain.
-4. **Map canonical locations.** Define one authoritative reference for each governed role, while retaining legitimate replicas, backups, versioned outputs, and application-managed state where required. Keep machine-specific indexes and path maps local and appropriately restricted; never publish them.
+4. **Map canonical locations.** Define one authoritative reference for each governed role, while retaining legitimate replicas, backups, versioned outputs, and application-managed state where required. Apply [the naming and classification criteria](docs/naming-and-classification.md) and [the authority, freshness, and lifecycle rules](docs/index-freshness-and-authority.md). Keep machine-specific indexes and path maps local and appropriately restricted; never publish them.
 5. **Plan before changing.** Produce a dry-run plan listing source and destination references, operation, expected bytes, collision checks, verification method, rollback, and any approval required. Do not overwrite an existing target. Do not silently change application, VM, service, or system-managed paths.
 6. **Execute in bounded transactions.** Use the host's approved file-management interface. Preserve source data until destination verification succeeds. For cross-device moves, copy and verify first, then treat source removal as a separate authorized step. Permanent deletion is opt-in and requires an explicit scope and recovery assessment.
 7. **Verify and reconcile.** Confirm the actual post-state, content hash when appropriate, metadata needed by the owner, application references, and index update. Record partial or unknown outcomes honestly; do not report success based only on a command's exit code.
@@ -41,4 +41,4 @@ For a Downloads root, any inventory or search of the whole root—including a sh
 
 ## References
 
-Read [the governance model](docs/governance-model.md) first, then the relevant platform profile: [Windows](profiles/windows.md), [Linux server](profiles/linux-server.md), or [Downloads](scenarios/downloads.md). When using local credentials, follow [non-plaintext credential use](docs/credential-use.md). The [schemas](schemas/) describe portable record shapes, not a requirement to upload local records.
+Read [the maturity criteria](docs/maturity-criteria.md), [the stepwise implementation plan](docs/implementation-plan.md), and [the governance model](docs/governance-model.md) first, then the relevant platform profile: [Windows](profiles/windows.md), [Linux server](profiles/linux-server.md), or [Downloads](scenarios/downloads.md). When using local credentials, follow [non-plaintext credential use](docs/credential-use.md). The [schemas](schemas/) describe portable record shapes, not a requirement to upload local records. Schema $id values are versioned; incompatible changes require a new identifier and a migration note.

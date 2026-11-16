@@ -7,6 +7,10 @@
 ## 内容
 
 - [SKILL.md](SKILL.md)：可移植的治理流程，供支持 Agent Skills 的 Agent 加载。
+- [成熟度标准](docs/maturity-criteria.md)：产品定义、用户视角、可验收指标、M0-M3 门槛。
+- [逐步执行清单](docs/implementation-plan.md)：P0-P3 每步的完成条件、验证、证据和回滚纪律。
+- [命名与分类判据](docs/naming-and-classification.md)：目录/文件命名、五轴分类、证据门槛、冲突消解、hold 条件。
+- [权威、新鲜度与生命周期](docs/index-freshness-and-authority.md)：canonical tie-break、索引重建、tombstone、retention、schema 迁移。
 - [治理模型](docs/governance-model.md)：分类轴、索引约束、变更状态和证据要求。
 - [非明文凭据使用](docs/credential-use.md)：通过本机 vault-backed adapter 使用凭据，不让 Token 进入模型提供商可见内容。
 - [Agent onboarding](docs/agent-onboarding.md)：新 Agent 首次收到路径后，如何在当前 Agent 的自动加载入口登记指针，并保持唯一规范源。
@@ -18,7 +22,7 @@
 - [JSON Schema](schemas/)：机器索引记录和变更事务记录格式。
 - [只读校验与预检库](lib/governance-validator.mjs) 及 CLI（`bin/cfg-validate.mjs`）：Schema 契约校验、授权根目录包含检查、链接/冲突预检与公开树脱敏扫描。
 - [清单检索器](bin/cfg-find.mjs)：在本地受限的 gzip JSONL 元数据清单里按文件名或路径片段检索，输出绝对路径；清单路径由 `--summary` 或 `CFG_INVENTORY_SUMMARY` 提供，不写死在框架中。
-- [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；不覆盖目标、不跟随链接、不删除原件。
+- [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；部分失败时逆序 best-effort 恢复已应用项并保守标记 `outcome_unknown`；不覆盖目标、不跟随链接、不删除原件。
 
 ## 使用
 
@@ -30,9 +34,11 @@
 
 ## 当前阶段
 
-0.2.0 明确统一规范源与首次持久接入流程，并建立跨 Agent 核心流程、Windows 与 Linux 服务器 profile、Downloads 场景及基础 schema。这里的服务器规则是治理指导，不是生产级远程执行器；具体访问与变更仍须由本机安全工具和任务授权控制。
+0.2 明确统一规范源与首次持久接入流程，并建立跨 Agent 核心流程、Windows 与 Linux 服务器 profile、Downloads 场景及基础 schema。这里的服务器规则是治理指导，不是生产级远程执行器；具体访问与变更仍须由本机安全工具和任务授权控制。
 
 0.3 起提供最小可用的执行闭环：清单检索、dry-run 计划、有界事务执行、哈希校验与回滚。元数据清单是某一时点的快照，扫描之后新建的文件不会出现在旧清单中；按当前任务授权重新生成本地清单后再检索，不要把旧清单当作实时文件系统。
+
+0.4 补齐成熟度契约：产品定义、命名与分类判据、权威/新鲜度/生命周期、稳定 schema 标识、文档链接与版本一致性检查、逐步执行清单，以及部分失败自动止血。它仍不是「全盘自动整理器」；P1 之后的快速索引、增量刷新、重复簇、普通用户入口和企业控制按清单逐步验收。
 
 ## License
 

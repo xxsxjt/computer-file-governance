@@ -91,3 +91,35 @@ test("source outside authorized roots is rejected before execution", async () =>
   }
 });
 
+test("partial failure restores earlier verified items conservatively", async () => {
+  const f = await fixture();
+  const secondSource = f.src;
+  const secondDestination = path.join(f.root, "organized", "second-pass.txt");
+  try {
+    const plan = {
+      scope: "synthetic partial failure",
+      authorized_roots: [f.root],
+      evidence_dir: f.evidence,
+      items: [
+        { source: f.src, destination: f.dst },
+        { source: secondSource, destination: secondDestination },
+      ],
+    };
+    const out = await runTransaction(plan, { execute: true });
+    assert.equal(out.ok, false);
+    assert.equal(out.status, "outcome_unknown");
+    assert.equal(out.manifest.status, "outcome_unknown");
+    assert.equal(await readFile(f.src, "utf8"), "tidied payload");
+    await assert.rejects(import("node:fs/promises").then(({ access }) => access(f.dst)), { code: "ENOENT" });
+    assert.equal(out.manifest.items[0].result, "unknown");
+    assert.ok(out.recovery.restored.includes(0));
+    assert.equal(out.recovery.unknown.length, 0);
+    assert.ok(out.manifest.verification.checks.some((check) => check.includes("restore_0_best_effort=restored")));
+    const persisted = JSON.parse(await readFile(out.manifestPath, "utf8"));
+    assert.equal(persisted.status, "outcome_unknown");
+    assert.equal(validateTransactionManifest(persisted).valid, true);
+  } finally {
+    await rm(f.base, { recursive: true, force: true });
+  }
+});
+
