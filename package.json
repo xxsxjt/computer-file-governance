@@ -12,6 +12,7 @@
     "cfg-validate": "./bin/cfg-validate.mjs",
     "cfg-find": "./bin/cfg-find.mjs",
     "cfg-duplicates": "./bin/cfg-duplicates.mjs",
+    "cfg-suggest": "./bin/cfg-suggest.mjs",
     "cfg-tidy": "./bin/cfg-tidy.mjs"
   },
   "files": [
