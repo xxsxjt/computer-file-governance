@@ -136,4 +136,3 @@ else {
     process.stdout.write(h.kind.padEnd(9) + " " + h.rootId.padEnd(28) + size + "  " + (h.path ?? h.relativePath) + "\n");
   }
 }
-

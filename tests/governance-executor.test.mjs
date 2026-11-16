@@ -122,4 +122,3 @@ test("partial failure restores earlier verified items conservatively", async () 
     await rm(f.base, { recursive: true, force: true });
   }
 });
-
