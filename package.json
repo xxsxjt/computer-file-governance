@@ -6,6 +6,12 @@
   "type": "module",
   "exports": {
     ".": "./lib/governance-validator.mjs",
+    "./executor": "./lib/governance-executor.mjs",
+    "./secondary-index": "./lib/secondary-index.mjs",
+    "./duplicate-clusters": "./lib/duplicate-clusters.mjs",
+    "./incremental-refresh": "./lib/incremental-refresh.mjs",
+    "./classification-suggestions": "./lib/classification-suggestions.mjs",
+    "./user-report": "./lib/user-report.mjs",
     "./schemas/*": "./schemas/*"
   },
   "bin": {
