@@ -28,6 +28,7 @@
 - [分类建议](lib/classification-suggestions.mjs) 与 CLI（`bin/cfg-suggest.mjs`）：基于名称、目录上下文、已有记录和版本控制状态给出 role/privacy/lifecycle 建议与置信度；永远只输出 dry-run，unknown/hold 保留。
 - [普通用户入口](docs/user-guide.md) 与 [结果摘要/错误码表](lib/user-report.mjs)：把查询、预览、撤销折叠成人类可读步骤；`outcome_unknown` 明确保留风险说明。
 - [第三方适配示例](adapters/examples/README.md)：搜索、同步与版本控制工具只提供证据或只读结果；写操作仍由有界事务控制。
+- [变更记录](CHANGELOG.md)、[安全政策](SECURITY.md) 与 [贡献规范](CONTRIBUTING.md)：发布变更、漏洞报告与公开边界的维护入口。
 - [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；部分失败时逆序 best-effort 恢复已应用项并保守标记 `outcome_unknown`；不覆盖目标、不跟随链接、不删除原件。
 - [合成索引基准](scripts/benchmark-secondary-index.mjs)：`npm run bench:index -- --rows 2000 --queries 20`，只生成合成元数据，测量二级索引查询与线性查询的 p50/p95，不读取真实清单。
 

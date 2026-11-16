@@ -18,6 +18,10 @@
   "files": [
     "SKILL.md",
     "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CODEOWNERS",
     "LICENSE",
     "adapters/",
     "bin/",
