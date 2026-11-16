@@ -11,6 +11,7 @@
   "bin": {
     "cfg-validate": "./bin/cfg-validate.mjs",
     "cfg-find": "./bin/cfg-find.mjs",
+    "cfg-duplicates": "./bin/cfg-duplicates.mjs",
     "cfg-tidy": "./bin/cfg-tidy.mjs"
   },
   "files": [
@@ -27,7 +28,8 @@
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check:pack": "npm pack --dry-run"
+    "check:pack": "npm pack --dry-run",
+    "bench:index": "node scripts/benchmark-secondary-index.mjs"
   },
   "engines": {
     "node": ">=20"
