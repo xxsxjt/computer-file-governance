@@ -1,6 +1,6 @@
 ---
 name: computer-file-governance
-description: Apply when cataloging, classifying, standardizing, archiving, relocating, or reviewing files and directories on a computer or server. Establish purpose, ownership, privacy, lifecycle, canonical references, and recoverable change records; do not treat cleanup as the objective.
+description: Apply when establishing or using a computer file governance framework: finding files through an authorized index, classifying ownership and lifecycle, keeping Agent workspaces and artifacts in defined locations, reviewing or planning bounded changes, or calling authorized services through a vault-backed adapter without exposing plaintext credentials. This is not a whole-machine auto-organizer.
 license: AGPL-3.0-only
 compatibility: Works with Agent Skills-compatible systems; platform-specific operations require a matching profile and an authorized filesystem or remote-management tool.
 metadata:
@@ -9,13 +9,13 @@ metadata:
 
 # Computer File Governance
 
-Use this skill to make file and directory management coherent across agents and machines. The objective is an understandable, searchable, ownership-aware file system. Moving or deleting items is optional and never a measure of success by itself.
+Use this Skill as the Agent entry point to a broader governance framework. The framework keeps file rules, searchable indexes, Agent workspace/artifact boundaries, and vault-backed non-plaintext service calls coherent across agents and machines. The objective is an understandable, searchable, ownership-aware working environment; moving or deleting items is optional and never a measure of success by itself. Read [the architecture boundary](docs/architecture.md) and [the artifact lifecycle](docs/artifact-lifecycle.md) before treating any executor as a required path.
 
 ## First-use setup
 
 When the user first provides this Skill's path or repository URL to this Agent, treat that user-designated repository as the sole canonical source. Read its full `SKILL.md` and linked references, then register only a stable pointer in a verified shared auto-loaded instruction entry if this Agent actually reads it; otherwise use this Agent's own auto-loaded global instructions. Do not copy/vendor the Skill or its references into an Agent-private skills/plugins/prompts directory. If a native loader requires such a directory, use only a verified pointer/stub or supported link to the canonical source; if it cannot load that source, explain the limitation rather than creating a duplicate. This onboarding applies only to the current Agent; do not configure other Agents unless the user separately asks. Follow [the persistent Agent onboarding procedure](docs/agent-onboarding.md) and verify the next reload/new-session path.
 
-## Required workflow
+## Required workflow for governed file work
 
 1. **Set scope.** Identify the exact authorized machine, roots, owner, purpose, privacy boundary, and allowed operation types. Do not infer authority from a path merely existing. For Windows, resolve the current account and Known Folder targets. For a server, confirm the host identity and remote authorization before accessing it.
 2. **Inventory proportionally.** Start with bounded metadata such as name, kind, size, timestamps, owner, and link/mount status. Do not read file bodies, recurse through links, or scan outside the declared roots unless that is necessary and authorized. Record inventory limits and unknowns.
@@ -28,6 +28,18 @@ For a Downloads root, any inventory or search of the whole root—including a sh
 7. **Verify and reconcile.** Confirm the actual post-state, content hash when appropriate, metadata needed by the owner, application references, and index update. Record partial or unknown outcomes honestly; do not report success based only on a command's exit code.
 8. **Report and retain evidence.** Summarize what changed, what stayed on hold, verification results, canonical references, and rollback location. Store transaction manifests beside the private machine/project records, not in this public repository.
 
+## Index, workspace, and artifact workflow
+
+When the task is lookup, handoff, or production rather than file relocation:
+
+1. Select the registered project/task workspace and its logical temporary, working, deliverables, evidence, rollback, cache, and private-index slots. Do not write task output to the repository root or an arbitrary system temporary folder.
+2. Query only an authorized local manifest or index. Treat its snapshot time, covered roots, skipped items, and freshness status as part of the result; stale indexes are not live filesystem truth.
+3. Label each created file as temporary, intermediate, deliverable, evidence, rollback, cache, private_index, or manifest, then record its owner, role, privacy, lifecycle, and retention condition.
+4. Keep intermediate files out of deliverables, keep evidence out of source trees, keep rollback material out of public Git, and keep private indexes/manifests in the host's restricted location.
+5. On handoff, report workspace, artifact category, status, evidence reference, unresolved holds, and next step. Done requires the deliverable location and verification evidence to be findable.
+
+File changes are a separate optional path. Use the bounded transaction workflow only when the current task authorizes a concrete change; indexing, workspace placement, and artifact reporting do not imply permission to move or delete files.
+
 ## Safety defaults
 
 - Unknown owner, unclear purpose, active work, application-owned data, credentials, databases, VM images, and mounted/server-managed data remain untouched until their boundary is established.
@@ -36,6 +48,7 @@ For a Downloads root, any inventory or search of the whole root—including a sh
 - Keep secret values out of model context, public indexes, logs, examples, and manifests. Use opaque local references where possible.
 - A user-authorized Agent may use a local vault-backed credential adapter regardless of model-provider channel. This is provider-side confidentiality, not an agent-trust gate: keep the credential out of provider-visible prompts, tool arguments/results, files, and logs; let the local adapter use it for the intended target request. Do not ask the Agent to resolve or print the credential.
 - Tool requests and returned data remain visible to the model provider. Hide the credential value, not the fact or content of the operation; apply the relevant privacy classification to all other data.
+- A vault-backed adapter is a host capability, not created by this document. It should accept only non-secret request parameters and an opaque credential reference, enforce a target and operation allowlist, redact credential material from results and logs, return stable non-secret error/status data, and leave rotation/revocation and audit ownership explicit. If no verified adapter is configured, report the capability as specified but not deployed.
 - A schema-valid index or transaction manifest is data-shape validation, not proof of path containment, link/mount safety, collision-free targets, authorization, or successful rollback; runtime adapters must verify those against the actual filesystem.
 - If the operating system or external service itself requires an authorization step that cannot be represented by the current text instruction, stop at that boundary; do not replace it with a lower-level method to bypass the platform requirement. Tool-generated duplicate confirmation dialogs are not an independent authorization rule.
 

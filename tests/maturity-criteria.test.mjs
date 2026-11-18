@@ -43,12 +43,26 @@ test("schemas publish stable and distinct contract ids", async () => {
 test("maturity criteria define product boundary, users, metrics, and gates", async () => {
   const criteria = await readText("docs/maturity-criteria.md");
   const plan = await readText("docs/implementation-plan.md");
+  const architecture = await readText("docs/architecture.md");
+  const artifacts = await readText("docs/artifact-lifecycle.md");
+  const credentialUse = await readText("docs/credential-use.md");
+  const readme = await readText("README.md");
   const requiredCriteria = ["产品定义", "非目标", "普通用户", "专业用户", "开发者", "企业", "多 Agent", "可验收指标", "M0", "M1", "M2", "M3"];
   for (const phrase of requiredCriteria) assert.ok(criteria.includes(phrase), "missing criteria phrase: " + phrase);
   assert.match(criteria, /p95/);
   assert.match(criteria, /outcome_unknown/);
   for (const prefix of ["P0-", "P1-", "P2-", "P3-"]) assert.ok(plan.includes(prefix), "missing plan prefix: " + prefix);
   assert.ok(plan.includes("一步一验收"));
+  for (const phrase of ["四层架构", "规范合同", "宿主适配器", "不是全机自动整理器"]) {
+    assert.ok(architecture.includes(phrase) || readme.includes(phrase), "missing positioning phrase: " + phrase);
+  }
+  for (const phrase of ["temporary", "intermediate", "deliverable", "evidence", "rollback", "private_index"]) {
+    assert.ok(artifacts.includes(phrase), "missing artifact kind: " + phrase);
+  }
+  for (const phrase of ["opaque credential reference", "allowlist", "部署未验证"]) {
+    assert.ok(credentialUse.includes(phrase), "missing credential boundary: " + phrase);
+  }
+  assert.ok(readme.includes("不只是一个 Agent Skill"));
 });
 
 test("public relative Markdown links resolve inside the repository", async () => {

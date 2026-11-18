@@ -1,5 +1,14 @@
 # Agent Adapters
 
+本目录描述四类宿主适配器的边界，而不是声称本仓库已经部署了所有适配器：
+
+1. **规范接入 adapter**：让 Agent 读取唯一规范入口和关联规则。
+2. **索引 adapter**：提供经授权的 metadata manifest、freshness、查询和旧路径/tombstone 语义。
+3. **工作区/产物 adapter**：为 temporary、intermediate、deliverable、evidence、rollback、cache、private_index 和 manifest 提供逻辑落点与交接状态。
+4. **vault-backed adapter**：按非明文凭据合同使用 opaque credential reference；实际保险库和解析器可以由宿主提供。
+
+文件移动、归档或删除属于第五种可选的变更执行 adapter，不是所有治理任务的前置条件。
+
 核心规则只有一份：用户指定的统一规范仓库中的根目录 `SKILL.md`。Agent 私有配置/skills 目录不是规范源，只能保存直达该文件的短指针或已验证的 link，不应复制完整 Skill 或引用文档。
 
 ## 一次登记，后续自动加载
@@ -27,9 +36,24 @@
 
 各 Agent 的入口、配置键和 link 支持会随版本变化。发布具体接入步骤前，先核对相应 Agent 的官方文档与当前稳定版；不要把某个 Agent 私有 API 描述成跨 Agent 标准。
 
-## 适配器接口建议
+## 索引与工作区适配器接口建议
 
-一个文件治理 adapter 至少应能表达：
+索引 adapter 至少应能表达：
+
+- 授权根、排除项、覆盖边界、快照 ID、生成时间、采集器/操作者、跳过项、错误和 freshness；
+- 只读 metadata manifest 或对已有清单的受控消费；链接/挂载/重解析点进入 hold，不默认跟随；
+- 查询语义、旧路径/tombstone、stale 原因和索引重建/原子切换状态；
+- 第三方搜索/同步/版本控制输出只作 evidence，不自动升级为权威。
+
+工作区/产物 adapter 至少应能表达：
+
+- task/workspace 引用以及 temporary、intermediate、deliverable、evidence、rollback、cache、private_index、manifest 的逻辑槽位；
+- source/derived/verifies/restores/published_as 关系、版本、生命周期、保留条件和 unresolved hold；
+- 任务交接时可发现的落点、状态、验证证据和下一步；日志和错误信息脱敏。
+
+## 变更执行 adapter 接口建议
+
+只有在任务明确需要文件变更时，变更执行 adapter 至少应能表达：
 
 - 授权根目录与排除项；直属或有界递归的元数据预览；链接/挂载识别。
 - 候选变更 dry-run、目标冲突拒绝、明确的用户确认；无 UI 时 fail closed。
@@ -39,8 +63,8 @@
 
 本仓库在 [`lib/governance-validator.mjs`](../lib/governance-validator.mjs) 与 [`bin/cfg-validate.mjs`](../bin/cfg-validate.mjs) 中提供了零副作用的参考校验实现，涵盖索引/事务 Schema 校验、授权根目录包含检查、`lstat` 符号链接/重解析点检测、目标冲突失败关闭预检以及 SHA-256/SHA-512 指纹核对。
 
-[`bin/cfg-find.mjs`](../bin/cfg-find.mjs) 提供本地元数据清单检索；[`lib/governance-executor.mjs`](../lib/governance-executor.mjs) 与 [`bin/cfg-tidy.mjs`](../bin/cfg-tidy.mjs) 提供 `plan` / `apply` / `rollback` 三态事务执行器。执行器仍要求调用方给出授权根目录与本机证据目录，且只在 `apply` 时产生变更。
+[`bin/cfg-find.mjs`](../bin/cfg-find.mjs) 提供本地元数据清单检索；[`lib/governance-executor.mjs`](../lib/governance-executor.mjs) 与 [`bin/cfg-tidy.mjs`](../bin/cfg-tidy.mjs) 提供可选的 `plan` / `apply` / `rollback` 三态事务参考执行器。执行器仍要求调用方给出授权根目录与本机证据目录，且只在 `apply` 时产生变更；索引查询、工作区落点和产物交接不以 `apply` 为完成条件。
 
 公开 adapter 实现不得包含真实机器路径、用户身份、远程主机、授权令牌或实际文件清单。
 
-只读与可逆的搜索/同步/版本控制共存示例见 [adapters/examples/README.md](examples/README.md)。第三方工具输出只作为 evidence，不覆盖统一规范源；只有 `cfg-tidy apply` 产生变更。
+只读与可逆的搜索/同步/版本控制共存示例见 [adapters/examples/README.md](examples/README.md)。第三方工具输出只作为 evidence，不覆盖统一规范源；任何变更都必须由任务授权的变更 adapter 产生并保留 manifest，不能把 `cfg-tidy apply` 当作唯一执行路径。

@@ -1,6 +1,7 @@
 {
   "name": "computer-file-governance",
   "version": "0.4.0",
+  "description": "Four-layer file governance framework for agents and people: rules, searchable indexes, workspace/artifact boundaries, and vault-backed non-plaintext service adapters.",
   "private": false,
   "license": "AGPL-3.0-only",
   "type": "module",

@@ -1,8 +1,8 @@
 # Computer File Governance
 
-跨 Agent 的全机文件治理规范。目标是让文件系统具备清楚、稳定、可检索的用途分类、责任边界、生命周期和变更证据；移动文件只是可能采用的一种手段。
+面向 Agent 和人的电脑文件治理与工作产物边界框架。它不是全机自动整理器，也不只是一个 Agent Skill：项目同时定义文件治理规范、统一索引与查找、Agent 工作区/产物生命周期边界，以及 vault-backed 非明文服务调用边界。移动文件只是可能采用的一种受控手段。
 
-本仓库以通用 Agent Skill 为核心，平台 profile 只描述差异，不假设所有电脑或服务器有相同盘符、目录结构或所有者。公开仓库保存规范、schema 和合成示例，不保存任何机器的真实路径、目录清单、日志、凭据或私人 manifest。
+根目录 SKILL.md 是 Agent 接入入口，但不是全部产品。平台 profile 只描述差异，不假设所有电脑或服务器有相同盘符、目录结构或所有者。公开仓库保存规范、schema、参考代码和合成示例，不保存任何机器的真实路径、目录清单、日志、凭据、私有索引或私人 manifest。
 
 ## 内容
 
@@ -12,6 +12,8 @@
 - [命名与分类判据](docs/naming-and-classification.md)：目录/文件命名、五轴分类、证据门槛、冲突消解、hold 条件。
 - [权威、新鲜度与生命周期](docs/index-freshness-and-authority.md)：canonical tie-break、索引重建、tombstone、retention、schema 迁移。
 - [治理模型](docs/governance-model.md)：分类轴、索引约束、变更状态和证据要求。
+- [架构定位与边界](docs/architecture.md)：四层职责、规范/参考实现/宿主适配器的边界和公开/私有分流。
+- [Agent 产物生命周期与落点](docs/artifact-lifecycle.md)：临时文件、中间产物、交付物、证据、回滚、副本、缓存、索引和 manifest 的角色与落点。
 - [非明文凭据使用](docs/credential-use.md)：通过本机 vault-backed adapter 使用凭据，不让 Token 进入模型提供商可见内容。
 - [Agent onboarding](docs/agent-onboarding.md)：新 Agent 首次收到路径后，如何在当前 Agent 的自动加载入口登记指针，并保持唯一规范源。
 - [主管编排与任务契约](docs/supervisor-orchestration-design.md)：主管层、编排运行时与文件治理适配器的三层职责与 Task Envelope。
@@ -31,8 +33,10 @@
 - [变更记录](CHANGELOG.md)、[安全政策](SECURITY.md) 与 [贡献规范](CONTRIBUTING.md)：发布变更、漏洞报告与公开边界的维护入口。
 - [依赖与第三方来源审计](docs/dependency-audit.md)：运行时零 npm 依赖，开发依赖锁定且不在发布包内。
 - [企业控制映射](docs/enterprise-controls.md)：RBAC、哈希审计链、retention/legal hold、SLO 与合规证据导出的框架级边界。
-- [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复；部分失败时逆序 best-effort 恢复已应用项并保守标记 `outcome_unknown`；不覆盖目标、不跟随链接、不删除原件。
+- [有界事务执行器](lib/governance-executor.mjs) 及 CLI（`bin/cfg-tidy.mjs`）：一个可选的、按任务授权调用的参考执行器；`plan` 生成 dry-run 与 Schema 合法 manifest，`apply` 先备份再移动并逐文件 SHA-256 校验，`rollback` 用备份恢复。它不是后台整理器，也不是使用本框架的必经路径。
 - [合成索引基准](scripts/benchmark-secondary-index.mjs)：`npm run bench:index -- --rows 2000 --queries 20`，只生成合成元数据，测量二级索引查询与线性查询的 p50/p95，不读取真实清单。
+
+清单采集器不是本仓库的必备核心；真实宿主可自行提供只读、授权、有界的 manifest 采集适配器，公开仓库只定义清单消费、索引和 freshness 语义。
 
 ## 使用
 
@@ -46,9 +50,9 @@
 
 0.2 明确统一规范源与首次持久接入流程，并建立跨 Agent 核心流程、Windows 与 Linux 服务器 profile、Downloads 场景及基础 schema。这里的服务器规则是治理指导，不是生产级远程执行器；具体访问与变更仍须由本机安全工具和任务授权控制。
 
-0.3 起提供最小可用的执行闭环：清单检索、dry-run 计划、有界事务执行、哈希校验与回滚。元数据清单是某一时点的快照，扫描之后新建的文件不会出现在旧清单中；按当前任务授权重新生成本地清单后再检索，不要把旧清单当作实时文件系统。
+0.3 起提供索引消费和可选变更参考路径：清单检索、dry-run 计划、有界事务执行、哈希校验与回滚。元数据清单是某一时点的快照，扫描之后新建的文件不会出现在旧清单中；按当前任务授权重新生成或取得本地清单后再检索，不要把旧清单当作实时文件系统。
 
-0.4 补齐成熟度契约：产品定义、命名与分类判据、权威/新鲜度/生命周期、稳定 schema 标识、文档链接与版本一致性检查、逐步执行清单，以及部分失败自动止血。它仍不是「全盘自动整理器」；P1 之后的快速索引、增量刷新、重复簇、普通用户入口和企业控制按清单逐步验收。
+0.4 补齐成熟度契约和参考工具：产品定义、命名与分类判据、权威/新鲜度/生命周期、稳定 schema 标识、工作区与产物边界、文档链接与版本一致性检查、逐步执行清单，以及部分失败自动止血。它不是全盘自动整理器；索引、产物边界、vault adapter 合同和可选事务执行路径分别验收，宿主部署状态不得凭公开代码推断。
 
 ## License
 
