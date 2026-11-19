@@ -1,7 +1,7 @@
 {
   "name": "computer-file-governance",
   "version": "0.4.0",
-  "description": "Four-layer file governance framework for agents and people: rules, searchable indexes, workspace/artifact boundaries, and vault-backed non-plaintext service adapters.",
+  "description": "Whole-machine file governance, shared information, and unified indexing framework for people and agents, with workspace/artifact and vault-backed adapter support.",
   "private": false,
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -14,6 +14,7 @@
     "./classification-suggestions": "./lib/classification-suggestions.mjs",
     "./user-report": "./lib/user-report.mjs",
     "./enterprise-controls": "./lib/enterprise-controls.mjs",
+    "./credential-contract": "./lib/credential-contract.mjs",
     "./schemas/*": "./schemas/*"
   },
   "bin": {

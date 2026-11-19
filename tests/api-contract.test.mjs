@@ -11,6 +11,7 @@ const expectedExports = {
   "./classification-suggestions": "./lib/classification-suggestions.mjs",
   "./user-report": "./lib/user-report.mjs",
   "./enterprise-controls": "./lib/enterprise-controls.mjs",
+  "./credential-contract": "./lib/credential-contract.mjs",
   "./schemas/*": "./schemas/*",
 };
 

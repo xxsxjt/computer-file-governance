@@ -10,6 +10,7 @@ import {
   computeFileFingerprint,
   mapPrivacyToHostBinary,
   preflightItemPaths,
+  validateInventorySummary,
 } from "../lib/governance-validator.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -109,12 +110,78 @@ test("cfg-validate CLI validates synthetic fixtures and exits non-zero on invali
   const cliPath = path.resolve(new URL("../bin/cfg-validate.mjs", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
   const validFile = path.resolve(new URL("./fixtures/transaction-manifest-planned.valid.json", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
   const invalidFile = path.resolve(new URL("./fixtures/transaction-manifest-parent-traversal.invalid.json", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+  const credentialFile = path.resolve(new URL("./fixtures/vault-adapter-request.valid.json", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 
   const { stdout } = await execFileAsync(process.execPath, [cliPath, validFile]);
   assert.match(stdout, /PASS \(transaction\)/);
+
+  const credentialResult = await execFileAsync(process.execPath, [cliPath, credentialFile]);
+  assert.match(credentialResult.stdout, /PASS \(credential\)/);
 
   await assert.rejects(
     execFileAsync(process.execPath, [cliPath, invalidFile]),
     (error) => error.code === 1 && /FAIL \(transaction\)/.test(error.stderr),
   );
+});
+
+test("validateInventorySummary enforces root, coverage, and freshness semantics", () => {
+  const summary = {
+    schemaVersion: 1,
+    snapshotId: "snapshot:S-002",
+    generatedAtUtc: "2026-11-18T19:00:00Z",
+    validatedAtUtc: "2026-11-18T19:05:00Z",
+    manifestPath: "fixture:manifest-002.jsonl.gz",
+    manifestBytes: 128,
+    manifestSha256: "b".repeat(64),
+    manifestEntryCount: 2,
+    manifestFormat: "gzip_jsonl",
+    querySemantics: "normalized_path_substring_v1",
+    collector: {
+      id: "collector:synthetic",
+      version: "1.0.0",
+      operatorRef: "operator:test",
+      sourceKind: "host_collector",
+      authorityStatus: "unverified_host",
+    },
+    scope: {
+      authorizationRef: "authorization:task-002",
+      authorizedRootIds: ["docs"],
+      allowedOperations: ["read_metadata"],
+      coverage: {
+        mode: "explicit_entries",
+        maxEntries: 2,
+        maxDepth: 2,
+        followReparsePoints: false,
+        followMounts: false,
+        boundaryPolicy: "hold_without_traversal",
+        includedKinds: ["file"],
+        includedCount: 2,
+        skippedCount: 0,
+      },
+    },
+    roots: [{ id: "docs", path: "fixture:root-docs" }],
+    skipped: [],
+    freshness: { status: "current", checkedAt: "2026-11-18T19:06:00Z", maxAgeMs: 604800000, reasons: [] },
+  };
+  assert.equal(validateInventorySummary(summary).valid, true);
+
+  const unknownRoot = structuredClone(summary);
+  unknownRoot.scope.authorizedRootIds = ["missing"];
+  assert.equal(validateInventorySummary(unknownRoot).valid, false);
+
+  const duplicateRoot = structuredClone(summary);
+  duplicateRoot.roots.push({ id: "docs", path: "fixture:other" });
+  assert.equal(validateInventorySummary(duplicateRoot).valid, false);
+
+  const staleCount = structuredClone(summary);
+  staleCount.scope.coverage.skippedCount = 1;
+  assert.equal(validateInventorySummary(staleCount).valid, false);
+
+  const badTime = structuredClone(summary);
+  badTime.validatedAtUtc = "2026-11-18T18:00:00Z";
+  assert.equal(validateInventorySummary(badTime).valid, false);
+
+  const badRefreshTime = structuredClone(summary);
+  badRefreshTime.freshness.refreshByUtc = "2026-11-18T19:00:00Z";
+  assert.equal(validateInventorySummary(badRefreshTime).valid, false);
 });

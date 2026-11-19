@@ -3,7 +3,7 @@ import { createGunzip } from "node:zlib";
 import { createReadStream, readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import path from "node:path";
-import { assessIndexFreshness, buildSecondaryIndex, loadSecondaryIndex, querySecondaryIndex } from "../lib/secondary-index.mjs";
+import { assessIndexFreshness, buildSecondaryIndex, loadSecondaryIndex, normalizePathForQuery, querySecondaryIndex } from "../lib/secondary-index.mjs";
 
 const DEFAULT_SUMMARY = process.env.CFG_INVENTORY_SUMMARY ?? null;
 
@@ -40,13 +40,17 @@ if (!path.isAbsolute(summary.manifestPath)) {
   summary.manifestPath = path.resolve(path.dirname(path.resolve(opts.summary)), summary.manifestPath);
 }
 const roots = new Map(summary.roots.map((r) => [r.id, r.path]));
-const needle = query.toLowerCase();
+const needle = normalizePathForQuery(query);
+if (!needle) {
+  process.stderr.write("ERROR: query must contain at least one non-whitespace character\n");
+  process.exit(2);
+}
 let secondary = null;
 let freshness = null;
 if (opts.index) {
   try {
     secondary = loadSecondaryIndex(readFileSync(opts.index, "utf8"));
-    freshness = assessIndexFreshness(secondary, summary);
+  freshness = assessIndexFreshness(secondary, summary);
   } catch {
     secondary = null;
     freshness = { status: "stale", reasons: ["index_unreadable"] };
@@ -58,7 +62,7 @@ if (opts.buildIndex && (!secondary || freshness.status !== "fresh")) {
     summary,
     maxAgeMs: opts.maxAgeMs,
   });
-  freshness = { status: "fresh", reasons: [] };
+    freshness = assessIndexFreshness(secondary, summary);
   const { writeFile, rename, mkdir } = await import("node:fs/promises");
   const target = path.resolve(opts.buildIndex);
   await mkdir(path.dirname(target), { recursive: true });
@@ -75,10 +79,17 @@ if (secondary && freshness?.status === "fresh") {
   const hits = result.hits.map((row) => ({
     rootId: row.rootId,
     relativePath: row.relativePath,
+    oldRelativePath: row.oldRelativePath,
     kind: row.kind,
     bytes: row.bytes,
     mtimeUtc: row.mtimeUtc,
-    path: roots.has(row.rootId) ? path.join(roots.get(row.rootId), row.relativePath) : null,
+    state: row.state,
+    hold: row.hold,
+    tombstone: row.tombstone,
+    reason: row.reason,
+    matchPath: row.matchPath,
+    explanation: row.explanation,
+    path: roots.has(row.rootId) && row.relativePath ? path.join(roots.get(row.rootId), row.relativePath) : null,
   }));
   const output = {
     query,
@@ -86,7 +97,7 @@ if (secondary && freshness?.status === "fresh") {
     index: opts.index ?? opts.buildIndex,
     mode: "secondary",
     freshness: freshness.status,
-    staleReasons: [],
+    staleReasons: freshness.reasons,
     fallbackReason: result.reason,
     scanned: secondary.scannedLines ?? secondary.entryCount ?? 0,
     truncated: hits.length >= opts.limit,
@@ -94,7 +105,7 @@ if (secondary && freshness?.status === "fresh") {
   };
   if (opts.json) process.stdout.write(JSON.stringify(output, null, 2) + "\n");
   else {
-    process.stdout.write("query=" + query + " mode=secondary freshness=fresh scanned=" + output.scanned + " hits=" + hits.length + (output.truncated ? " (limit reached)" : "") + "\n");
+    process.stdout.write("query=" + query + " mode=secondary freshness=" + output.freshness + " scanned=" + output.scanned + " hits=" + hits.length + (output.truncated ? " (limit reached)" : "") + "\n");
     for (const h of hits) {
       const size = h.bytes === null || h.bytes === undefined ? "" : " " + h.bytes + "b";
       process.stdout.write(h.kind.padEnd(9) + " " + h.rootId.padEnd(28) + size + "  " + (h.path ?? h.relativePath) + "\n");
@@ -102,19 +113,31 @@ if (secondary && freshness?.status === "fresh") {
   }
   process.exit(0);
 }
-const rl = createInterface({ input: createReadStream(summary.manifestPath).pipe(createGunzip()), crlfDelay: Infinity });
+const manifestIsGzip = summary.manifestFormat
+  ? summary.manifestFormat === "gzip_jsonl"
+  : /\.gz$/i.test(summary.manifestPath);
+const manifestStream = manifestIsGzip
+  ? createReadStream(summary.manifestPath).pipe(createGunzip())
+  : createReadStream(summary.manifestPath);
+const rl = createInterface({ input: manifestStream, crlfDelay: Infinity });
 const hits = [];
 let scanned = 0;
 for await (const line of rl) {
   if (!line.trim()) continue;
   const row = JSON.parse(line);
-  if (row.recordType !== "entry") continue;
+  if (!["entry", "tombstone", "hold"].includes(row.recordType)) continue;
   scanned += 1;
   if (opts.root && row.rootId !== opts.root) continue;
   if (opts.kind && row.kind !== opts.kind) continue;
-  if (!String(row.relativePath).toLowerCase().includes(needle)) continue;
+  const currentPath = normalizePathForQuery(row.relativePath);
+  const oldPath = normalizePathForQuery(row.oldRelativePath ?? row.previousRelativePath ?? row.oldPath);
+  if (!currentPath.includes(needle) && !oldPath.includes(needle)) continue;
   const rootPath = roots.get(row.rootId);
-  hits.push({ rootId: row.rootId, relativePath: row.relativePath, kind: row.kind, bytes: row.bytes, mtimeUtc: row.mtimeUtc, path: rootPath ? path.join(rootPath, row.relativePath) : null });
+  const matchPath = currentPath.includes(needle) ? "current_path" : "old_path";
+  const tombstone = row.tombstone === true || row.recordType === "tombstone";
+  const hold = row.hold === true || row.recordType === "hold" || row.lifecycle === "hold";
+  const explanation = [tombstone ? "tombstone" : null, hold ? "hold" : null, matchPath === "old_path" ? "old_path" : null].filter(Boolean).join(",") || "current_entry";
+  hits.push({ rootId: row.rootId, relativePath: row.relativePath ?? null, oldRelativePath: row.oldRelativePath ?? row.previousRelativePath ?? row.oldPath ?? null, kind: row.kind, bytes: row.bytes, mtimeUtc: row.mtimeUtc, state: row.state ?? row.lifecycle ?? null, hold, tombstone, reason: row.reason ?? row.holdReason ?? row.tombstoneReason ?? null, matchPath, explanation, path: rootPath && row.relativePath ? path.join(rootPath, row.relativePath) : null });
   if (hits.length >= opts.limit) break;
 }
 const result = {

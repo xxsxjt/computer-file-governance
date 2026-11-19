@@ -1,0 +1,514 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/computer-file-governance/vault-adapter-contract-v1.json",
+  "title": "Vault-backed Credential Adapter Contract",
+  "$defs": {
+    "opaqueRef": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$",
+      "description": "Typed opaque reference. It is not a URL, filesystem path, credential value, or proof of authorization."
+    },
+    "requestRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^request:" }
+      ]
+    },
+    "serviceRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^service:" }
+      ]
+    },
+    "targetRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^target:" }
+      ]
+    },
+    "operationRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^operation:" }
+      ]
+    },
+    "credentialRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^credential:" }
+      ]
+    },
+    "authorizationRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^authorization:" }
+      ]
+    },
+    "actorRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^actor:" }
+      ]
+    },
+    "operationRunRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^operation-run:" }
+      ]
+    },
+    "auditRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^audit:" }
+      ]
+    },
+    "lifecycleRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^lifecycle:" }
+      ]
+    },
+    "idempotencyRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^idempotency:" }
+      ]
+    },
+    "reasonRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^reason:" }
+      ]
+    },
+    "jsonValue": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "privacy": {
+      "enum": ["none", "public", "internal", "restricted", "unknown"]
+    },
+    "errorClass": {
+      "enum": [
+        "invalid_request",
+        "unsupported_version",
+        "credential_reference_missing",
+        "credential_unavailable",
+        "policy_denied",
+        "target_not_allowed",
+        "operation_not_allowed",
+        "host_identity_failed",
+        "authentication_denied",
+        "authorization_denied",
+        "timeout",
+        "rate_limited",
+        "service_unavailable",
+        "unsafe_response",
+        "audit_unavailable",
+        "internal_error",
+        "outcome_unknown"
+      ]
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "rejected",
+        "failed",
+        "timed_out",
+        "rate_limited",
+        "unauthorized",
+        "unavailable",
+        "redaction_failed",
+        "outcome_unknown"
+      ]
+    },
+    "sideEffectState": {
+      "enum": ["not_applicable", "not_started", "completed", "possibly_completed", "not_confirmed"]
+    },
+    "retryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAttempts", "backoffMs", "retryableErrors"],
+      "properties": {
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "backoffMs": { "type": "integer", "minimum": 0, "maximum": 300000 },
+        "retryableErrors": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/errorClass" }
+        }
+      }
+    },
+    "requestPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeoutMs", "idempotent", "sideEffectMode", "retry", "auditRequired"],
+      "properties": {
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 600000 },
+        "idempotent": { "type": "boolean" },
+        "sideEffectMode": { "enum": ["read_only", "idempotent_write", "non_idempotent_write"] },
+        "retry": { "$ref": "#/$defs/retryPolicy" },
+        "idempotencyKey": { "$ref": "#/$defs/idempotencyRef" },
+        "auditRequired": { "const": true }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "sideEffectMode": { "enum": ["read_only", "idempotent_write"] } },
+            "required": ["sideEffectMode"]
+          },
+          "then": { "properties": { "idempotent": { "const": true } } }
+        },
+        {
+          "if": {
+            "properties": { "sideEffectMode": { "const": "non_idempotent_write" } },
+            "required": ["sideEffectMode"]
+          },
+          "then": { "properties": { "idempotent": { "const": false } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "idempotent": { "const": false },
+              "retry": {
+                "type": "object",
+                "properties": { "maxAttempts": { "type": "integer", "minimum": 2 } },
+                "required": ["maxAttempts"]
+              }
+            },
+            "required": ["idempotent", "retry"]
+          },
+          "then": {
+            "required": ["idempotencyKey"],
+            "properties": { "idempotencyKey": { "$ref": "#/$defs/idempotencyRef" } }
+          }
+        }
+      ]
+    },
+    "safeError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "code", "retryable", "messageCode"],
+      "properties": {
+        "class": { "$ref": "#/$defs/errorClass" },
+        "code": { "type": "string", "pattern": "^CFG_E_CRED_[A-Z0-9_]+$" },
+        "retryable": { "type": "boolean" },
+        "messageCode": { "type": "string", "pattern": "^message:[a-z0-9][a-z0-9._-]*$" },
+        "retryAfterMs": { "type": "integer", "minimum": 0, "maximum": 600000 }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["not_needed", "applied", "blocked"] },
+        "removedFieldCount": { "type": "integer", "minimum": 0 },
+        "reasonRef": { "$ref": "#/$defs/reasonRef" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "blocked" } },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["reasonRef"],
+            "properties": { "reasonRef": { "$ref": "#/$defs/reasonRef" } }
+          }
+        }
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractType",
+        "contractVersion",
+        "requestId",
+        "serviceRef",
+        "targetRef",
+        "operationRef",
+        "credentialRef",
+        "authorizationRef",
+        "parameters",
+        "policy"
+      ],
+      "properties": {
+        "contractType": { "const": "request" },
+        "contractVersion": { "const": "vault-adapter-v1" },
+        "requestId": { "$ref": "#/$defs/requestRef" },
+        "serviceRef": { "$ref": "#/$defs/serviceRef" },
+        "targetRef": { "$ref": "#/$defs/targetRef" },
+        "operationRef": { "$ref": "#/$defs/operationRef" },
+        "credentialRef": { "$ref": "#/$defs/credentialRef" },
+        "authorizationRef": { "$ref": "#/$defs/authorizationRef" },
+        "actorRef": { "$ref": "#/$defs/actorRef" },
+        "requestedAtUtc": { "type": "string", "format": "date-time" },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$" },
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        },
+        "policy": { "$ref": "#/$defs/requestPolicy" }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractType",
+        "contractVersion",
+        "requestId",
+        "operationRunId",
+        "status",
+        "sideEffectState",
+        "resultPrivacy",
+        "redaction",
+        "auditRef"
+      ],
+      "properties": {
+        "contractType": { "const": "response" },
+        "contractVersion": { "const": "vault-adapter-v1" },
+        "requestId": { "$ref": "#/$defs/requestRef" },
+        "operationRunId": { "$ref": "#/$defs/operationRunRef" },
+        "status": { "$ref": "#/$defs/status" },
+        "sideEffectState": { "$ref": "#/$defs/sideEffectState" },
+        "resultPrivacy": { "$ref": "#/$defs/privacy" },
+        "result": { "$ref": "#/$defs/jsonValue" },
+        "error": { "$ref": "#/$defs/safeError" },
+        "redaction": { "$ref": "#/$defs/redaction" },
+        "auditRef": { "$ref": "#/$defs/auditRef" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "succeeded" } },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["result"],
+            "not": {
+              "required": ["error"],
+              "properties": { "error": { "$ref": "#/$defs/safeError" } }
+            },
+            "properties": {
+              "resultPrivacy": { "enum": ["public", "internal", "restricted", "unknown"] },
+              "result": { "$ref": "#/$defs/jsonValue" }
+            }
+          },
+          "else": {
+            "required": ["error"],
+            "not": {
+              "required": ["result"],
+              "properties": { "result": { "$ref": "#/$defs/jsonValue" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "redaction_failed" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "redaction": {
+                "type": "object",
+                "properties": { "status": { "const": "blocked" } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "outcome_unknown" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "sideEffectState": { "enum": ["possibly_completed", "not_confirmed"] },
+              "error": {
+                "type": "object",
+                "properties": { "class": { "enum": ["outcome_unknown", "audit_unavailable", "internal_error"] } }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractType",
+        "contractVersion",
+        "auditId",
+        "requestId",
+        "operationRunId",
+        "timestampUtc",
+        "serviceRef",
+        "targetRef",
+        "operationRef",
+        "credentialRef",
+        "decision",
+        "outcome",
+        "sideEffectState",
+        "resultPrivacy",
+        "redactionStatus",
+        "retryCount"
+      ],
+      "properties": {
+        "contractType": { "const": "audit" },
+        "contractVersion": { "const": "vault-adapter-v1" },
+        "auditId": { "$ref": "#/$defs/auditRef" },
+        "requestId": { "$ref": "#/$defs/requestRef" },
+        "operationRunId": { "$ref": "#/$defs/operationRunRef" },
+        "timestampUtc": { "type": "string", "format": "date-time" },
+        "serviceRef": { "$ref": "#/$defs/serviceRef" },
+        "targetRef": { "$ref": "#/$defs/targetRef" },
+        "operationRef": { "$ref": "#/$defs/operationRef" },
+        "credentialRef": { "$ref": "#/$defs/credentialRef" },
+        "actorRef": { "$ref": "#/$defs/actorRef" },
+        "decision": { "enum": ["accepted", "rejected", "completed", "failed", "held"] },
+        "outcome": { "$ref": "#/$defs/status" },
+        "sideEffectState": { "$ref": "#/$defs/sideEffectState" },
+        "resultPrivacy": { "$ref": "#/$defs/privacy" },
+        "errorClass": { "$ref": "#/$defs/errorClass" },
+        "redactionStatus": { "enum": ["not_needed", "applied", "blocked"] },
+        "retryCount": { "type": "integer", "minimum": 0, "maximum": 5 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome": { "const": "succeeded" } },
+            "required": ["outcome"]
+          },
+          "then": {
+            "not": {
+              "required": ["errorClass"],
+              "properties": { "errorClass": { "$ref": "#/$defs/errorClass" } }
+            },
+            "properties": { "resultPrivacy": { "enum": ["public", "internal", "restricted", "unknown"] } }
+          },
+          "else": { "required": ["errorClass"] }
+        }
+      ]
+    },
+    "lifecycleEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "eventType", "atUtc", "actorRef", "resultingState", "reasonRef"],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/opaqueRef" },
+        "eventType": {
+          "enum": [
+            "rotated",
+            "revoked",
+            "disabled",
+            "scope_reduced",
+            "incident_opened",
+            "incident_closed",
+            "cache_invalidated",
+            "permission_reviewed"
+          ]
+        },
+        "atUtc": { "type": "string", "format": "date-time" },
+        "actorRef": { "$ref": "#/$defs/actorRef" },
+        "resultingState": {
+          "enum": ["active", "rotation_due", "revoked", "disabled", "scope_reduced", "incident_hold", "unknown"]
+        },
+        "reasonRef": { "$ref": "#/$defs/reasonRef" }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractType",
+        "contractVersion",
+        "lifecycleId",
+        "serviceRef",
+        "credentialRef",
+        "state",
+        "owners",
+        "allowedOperationRefs",
+        "rotation",
+        "events"
+      ],
+      "properties": {
+        "contractType": { "const": "lifecycle" },
+        "contractVersion": { "const": "vault-adapter-v1" },
+        "lifecycleId": { "$ref": "#/$defs/lifecycleRef" },
+        "serviceRef": { "$ref": "#/$defs/serviceRef" },
+        "credentialRef": { "$ref": "#/$defs/credentialRef" },
+        "state": {
+          "enum": ["active", "rotation_due", "revoked", "disabled", "scope_reduced", "incident_hold", "unknown"]
+        },
+        "owners": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["vaultOwnerRef", "adapterOwnerRef", "serviceOwnerRef"],
+          "properties": {
+            "vaultOwnerRef": { "$ref": "#/$defs/opaqueRef" },
+            "adapterOwnerRef": { "$ref": "#/$defs/opaqueRef" },
+            "serviceOwnerRef": { "$ref": "#/$defs/opaqueRef" }
+          }
+        },
+        "allowedOperationRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/operationRef" }
+        },
+        "rotation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["referenceModel", "cachePolicy", "lastRotatedAtUtc", "nextReviewAtUtc", "oldReferenceDisposition"],
+          "properties": {
+            "referenceModel": { "enum": ["stable_alias", "versioned_reference"] },
+            "cachePolicy": { "enum": ["no_cache", "process_bound", "host_managed"] },
+            "lastRotatedAtUtc": { "type": "string", "format": "date-time" },
+            "nextReviewAtUtc": { "type": "string", "format": "date-time" },
+            "oldReferenceDisposition": { "enum": ["revoke_immediately", "overlap_until_verified", "manual_review"] }
+          }
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "#/$defs/lifecycleEvent" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "enum": ["revoked", "disabled", "incident_hold"] } },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": { "allowedOperationRefs": { "type": "array", "maxItems": 0 } }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/response" },
+    { "$ref": "#/$defs/audit" },
+    { "$ref": "#/$defs/lifecycle" }
+  ]
+}

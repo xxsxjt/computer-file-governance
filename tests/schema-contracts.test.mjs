@@ -13,10 +13,14 @@ addFormats(ajv);
 const schemas = {
   index: await readJson(new URL("index-record.schema.json", schemaRoot)),
   transaction: await readJson(new URL("transaction-manifest.schema.json", schemaRoot)),
+  inventory: await readJson(new URL("inventory-summary.schema.json", schemaRoot)),
+  vault: await readJson(new URL("vault-adapter-contract.schema.json", schemaRoot)),
 };
 const validators = {
   index: ajv.compile(schemas.index),
   transaction: ajv.compile(schemas.transaction),
+  inventory: ajv.compile(schemas.inventory),
+  vault: ajv.compile(schemas.vault),
 };
 
 const validFixtures = [
@@ -38,8 +42,82 @@ const invalidFixtures = [
 test("Draft 2020-12 governance schemas compile with date-time format validation", () => {
   assert.equal(schemas.index.$schema, "https://json-schema.org/draft/2020-12/schema");
   assert.equal(schemas.transaction.$schema, "https://json-schema.org/draft/2020-12/schema");
+  assert.equal(schemas.inventory.$schema, "https://json-schema.org/draft/2020-12/schema");
+  assert.equal(schemas.vault.$schema, "https://json-schema.org/draft/2020-12/schema");
   assert.equal(typeof validators.index, "function");
   assert.equal(typeof validators.transaction, "function");
+  assert.equal(typeof validators.inventory, "function");
+  assert.equal(typeof validators.vault, "function");
+});
+
+function inventoryFixture() {
+  return {
+    schemaVersion: 1,
+    snapshotId: "snapshot:S-001",
+    generatedAtUtc: "2026-11-18T19:00:00Z",
+    validatedAtUtc: "2026-11-18T19:05:00Z",
+    manifestPath: "fixture:manifest-001.jsonl.gz",
+    manifestBytes: 128,
+    manifestSha256: "a".repeat(64),
+    manifestEntryCount: 3,
+    manifestFormat: "gzip_jsonl",
+    querySemantics: "normalized_path_substring_v1",
+    collector: {
+      id: "collector:synthetic",
+      version: "1.0.0",
+      operatorRef: "operator:test",
+      sourceKind: "host_collector",
+      authorityStatus: "unverified_host",
+    },
+    scope: {
+      authorizationRef: "authorization:task-001",
+      authorizedRootIds: ["docs", "media"],
+      allowedOperations: ["read_metadata"],
+      coverage: {
+        mode: "bounded_recursive",
+        maxEntries: 10,
+        maxDepth: 3,
+        followReparsePoints: false,
+        followMounts: false,
+        boundaryPolicy: "hold_without_traversal",
+        includedKinds: ["file", "directory", "reparse"],
+        includedCount: 3,
+        skippedCount: 1,
+      },
+    },
+    roots: [
+      { id: "docs", path: "fixture:root-docs" },
+      { id: "media", path: "fixture:root-media" },
+    ],
+    skipped: [{ reason: "boundary_hold", count: 1, ref: "skip:boundary-001" }],
+    freshness: {
+      status: "current",
+      checkedAt: "2026-11-18T19:06:00Z",
+      maxAgeMs: 604800000,
+      refreshByUtc: "2026-11-25T19:06:00Z",
+      reasons: [],
+    },
+  };
+}
+
+test("inventory summary fixture satisfies the input contract", () => {
+  const fixture = inventoryFixture();
+  assert.equal(validators.inventory(fixture), true, JSON.stringify(validators.inventory.errors));
+});
+
+test("inventory summary rejects missing authorization and invalid coverage", () => {
+  const fixture = inventoryFixture();
+  delete fixture.scope.authorizationRef;
+  assert.equal(validators.inventory(fixture), false);
+
+  const badCoverage = inventoryFixture();
+  badCoverage.scope.coverage.followReparsePoints = true;
+  assert.equal(validators.inventory(badCoverage), false);
+
+  const staleWithoutReason = inventoryFixture();
+  staleWithoutReason.freshness.status = "stale";
+  staleWithoutReason.freshness.reasons = [];
+  assert.equal(validators.inventory(staleWithoutReason), false);
 });
 
 for (const [kind, file] of validFixtures) {

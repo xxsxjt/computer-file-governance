@@ -1,8 +1,8 @@
 # Computer File Governance
 
-面向 Agent 和人的电脑文件治理与工作产物边界框架。它不是全机自动整理器，也不只是一个 Agent Skill：项目同时定义文件治理规范、统一索引与查找、Agent 工作区/产物生命周期边界，以及 vault-backed 非明文服务调用边界。移动文件只是可能采用的一种受控手段。
+面向整台电脑的文件治理、信息共享与统一索引框架，供人和多个 Agent 共同使用。项目定义全机目录职责、分类/命名/生命周期/隐私边界、工作区与产物落点，并通过 manifest、共享元数据和统一索引让人和 Agent 找到同一份可解释的信息。它不是后台无条件自动搬运器；移动、改名、归档或删除必须经过授权、dry-run、验证和回滚。vault-backed 非明文调用是配套的安全能力，不是项目主线。
 
-根目录 SKILL.md 是 Agent 接入入口，但不是全部产品。平台 profile 只描述差异，不假设所有电脑或服务器有相同盘符、目录结构或所有者。公开仓库保存规范、schema、参考代码和合成示例，不保存任何机器的真实路径、目录清单、日志、凭据、私有索引或私人 manifest。
+根目录 SKILL.md 是 Agent 接入入口，但项目不只是一个 Agent Skill。平台 profile 只描述差异，不假设所有电脑或服务器有相同盘符、目录结构或所有者。公开仓库保存规范、schema、参考代码和合成示例，不保存任何机器的真实路径、目录清单、日志、凭据、私有索引或私人 manifest。
 
 ## 内容
 
@@ -12,7 +12,7 @@
 - [命名与分类判据](docs/naming-and-classification.md)：目录/文件命名、五轴分类、证据门槛、冲突消解、hold 条件。
 - [权威、新鲜度与生命周期](docs/index-freshness-and-authority.md)：canonical tie-break、索引重建、tombstone、retention、schema 迁移。
 - [治理模型](docs/governance-model.md)：分类轴、索引约束、变更状态和证据要求。
-- [架构定位与边界](docs/architecture.md)：四层职责、规范/参考实现/宿主适配器的边界和公开/私有分流。
+- [架构定位与边界](docs/architecture.md)：全机治理、信息共享、统一索引、Agent 产物边界和宿主适配器的职责分层。
 - [Agent 产物生命周期与落点](docs/artifact-lifecycle.md)：临时文件、中间产物、交付物、证据、回滚、副本、缓存、索引和 manifest 的角色与落点。
 - [非明文凭据使用](docs/credential-use.md)：通过本机 vault-backed adapter 使用凭据，不让 Token 进入模型提供商可见内容。
 - [Agent onboarding](docs/agent-onboarding.md)：新 Agent 首次收到路径后，如何在当前 Agent 的自动加载入口登记指针，并保持唯一规范源。
@@ -21,10 +21,11 @@
 - [Linux server profile](profiles/linux-server.md)：服务器只读盘点、目录角色、服务/挂载点及远程权限边界。
 - [Downloads 场景](scenarios/downloads.md)：将下载目录作为收件箱治理，不做全量搬运。
 - [Agent adapters](adapters/README.md)：将同一核心流程接入不同 Agent，不另造一套冲突规则。
-- [JSON Schema](schemas/)：机器索引记录和变更事务记录格式。
-- [只读校验与预检库](lib/governance-validator.mjs) 及 CLI（`bin/cfg-validate.mjs`）：Schema 契约校验、授权根目录包含检查、链接/冲突预检与公开树脱敏扫描。
-- [清单检索器](bin/cfg-find.mjs)：在本地受限的 gzip JSONL 元数据清单里按文件名或路径片段检索，输出绝对路径；清单路径由 `--summary` 或 `CFG_INVENTORY_SUMMARY` 提供，不写死在框架中。
-- [可重建二级索引](lib/secondary-index.mjs) 与 `bin/cfg-find.mjs --index/--build-index`：按授权清单的字节数和 SHA-256 判断新鲜度；命中索引时避免逐行扫描，旧索引自动降级为线性查询并标出 stale 原因。
+- [Vault 合同校验器](lib/credential-contract.mjs) 与 cfg-validate --kind credential：只校验 vault-adapter-v1 的合成 request/response/audit/lifecycle 合同、稳定错误类别、重试/幂等性、脱敏边界和轮换记录；不连接真实保险库或服务。
+- [JSON Schema](schemas/)：机器索引记录、库存摘要和变更事务记录格式。
+- [只读校验与预检库](lib/governance-validator.mjs) 及 CLI（`bin/cfg-validate.mjs`）：Schema 契约校验、库存摘要语义校验、授权根目录包含检查、链接/冲突预检与公开树脱敏扫描。
+- [清单检索器](bin/cfg-find.mjs)：在本地受限的 JSONL/gzip JSONL 元数据清单里按统一规范化路径片段检索，输出绝对路径和旧路径、hold、tombstone 解释；清单路径由 `--summary` 或 `CFG_INVENTORY_SUMMARY` 提供，不写死在框架中。
+- [可重建二级索引](lib/secondary-index.mjs) 与 `bin/cfg-find.mjs --index/--build-index`：使用 `normalized_path_substring_v1`（NFKC、大小写折叠、斜杠规范化后的路径字面子串）统一线性与二级索引语义；按授权清单的字节数和 SHA-256 判断新鲜度，旧索引自动降级为线性查询并标出 stale 原因。
 - [重复簇分析](lib/duplicate-clusters.mjs) 与 CLI（`bin/cfg-duplicates.mjs`）：只消费已授权的索引记录，按算法/摘要聚合 REVIEW_ONLY 候选，默认排除 hold/retired/secret，不读取正文、不移动、不删除。
 - [增量刷新](lib/incremental-refresh.mjs)：比较两批快照，生成新增、变更、删除 tombstone 与跳过项；索引指针在版本预期匹配时切换，可回退；快照始终标记为时点视图，不当实时文件系统。
 - [分类建议](lib/classification-suggestions.mjs) 与 CLI（`bin/cfg-suggest.mjs`）：基于名称、目录上下文、已有记录和版本控制状态给出 role/privacy/lifecycle 建议与置信度；永远只输出 dry-run，unknown/hold 保留。
@@ -52,7 +53,7 @@
 
 0.3 起提供索引消费和可选变更参考路径：清单检索、dry-run 计划、有界事务执行、哈希校验与回滚。元数据清单是某一时点的快照，扫描之后新建的文件不会出现在旧清单中；按当前任务授权重新生成或取得本地清单后再检索，不要把旧清单当作实时文件系统。
 
-0.4 补齐成熟度契约和参考工具：产品定义、命名与分类判据、权威/新鲜度/生命周期、稳定 schema 标识、工作区与产物边界、文档链接与版本一致性检查、逐步执行清单，以及部分失败自动止血。它不是全盘自动整理器；索引、产物边界、vault adapter 合同和可选事务执行路径分别验收，宿主部署状态不得凭公开代码推断。
+0.4 补齐成熟度契约和参考工具：产品定义、命名与分类判据、权威/新鲜度/生命周期、稳定 schema 标识、工作区与产物边界、文档链接与版本一致性检查、逐步执行清单，以及部分失败自动止血。当前交付的是全机治理与统一索引的公开合同和参考实现；自动整理不是默认执行器，索引、产物边界和 vault adapter 等支撑能力分别验收，宿主部署状态不得凭公开代码推断。
 
 ## License
 

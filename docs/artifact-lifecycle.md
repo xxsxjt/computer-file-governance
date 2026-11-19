@@ -44,10 +44,16 @@ artifact_kind 说明“这份东西在任务中的物理/交付角色”，不�
 
 ## 4. 关系与命名
 
-产物应尽量记录 task_ref、workspace_ref、source_refs、artifact_kind、lifecycle、created_at、retention 条件以及 derived_from、verifies、restores 或 published_as 关系。关系引用使用稳定的本地引用或 opaque ID，不把密钥、Cookie 或认证头拼进文件名、manifest 或索引。
+产物交接记录应记录 task_ref、workspace_ref、source_refs、artifact_kind、lifecycle、owner、role、confidence、purpose、created_by、状态时间（planned_at 或 created_at）、temporary 的 expires_at、retention 条件以及 derived_from、verifies、restores 或 published_as 关系。cache 还要记录 rebuild_from、rebuild_method、rebuild_tool 和 rebuild_tool_version；关系引用使用稳定的本地引用或 opaque ID，不把密钥、Cookie 或认证头拼进文件名、manifest 或索引。
 
 推荐名称顺序为 purpose、artifact-kind、task-id、version-or-sequence、date；日期使用 UTC ISO 8601。避免 final、final2、misc、tmp-only 等不能表达责任或生命周期的名称。
 
 ## 5. 完成与清理
 
 任务只有在交付物位置、验证证据、回滚/保留决定和未决项都可追踪时才可标记完成。temporary、intermediate、evidence、rollback、cache 和 private_index 的清理分别按其保留条件处理；“看起来旧”“哈希相同”或“任务结束”都不是自动删除授权。
+
+## 6. 结构化交接记录
+
+最小 handoff 契约见 schemas/task-handoff.schema.json。记录包含 workspace_ref、task_ref、任务状态与下一步；每个 artifact 条目记录 artifact_kind、逻辑 slot、owner、privacy、lifecycle、role、confidence、purpose、created_by、当前 state、适用时间、retention，以及 source_refs、derived_from、verifies、restores、published_as 等关系。计划状态可以暂时没有产物，但必须保留 planned_at；已创建/验证/搁置的产物必须有 created_at；temporary 必须有 expires_at 与复核时间；cache 必须有可重建输入、方法、工具和版本。完成状态还要记录 deliverable/evidence/rollback 的处置关系。
+
+引用只能使用带类型的 opaque ID，不得写物理路径、用户名、URL、凭据或认证头。secret、private_index、manifest、rollback 等类别仍须按真实宿主隐私分级；Schema 只校验记录形状和部分跨字段约束，不证明引用目标存在、授权成立、文件确实落在对应物理目录、Git 忽略规则生效或验证操作成功。validateTaskHandoff 还会在 Schema 通过后检查 artifact_ref 唯一性、完成引用是否指向正确类别/状态、证据是否实际验证交付物以及回滚引用是否指向 rollback 材料。真实 handoff/manifest/索引必须保存在宿主指定的本机或受限位置，不得因 Schema 与示例公开而提交真实记录。

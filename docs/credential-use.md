@@ -31,6 +31,26 @@
 6. **生命周期责任**：vault 所有者负责存储和访问策略；adapter 所有者负责解析、脱敏、超时、重试和审计；服务所有者负责权限、轮换和撤销。三者责任不能由本规范自动推断。
 7. **部署声明**：只有在宿主配置完成并通过不含秘密的合同测试/金丝雀后，才能标记“已部署”；否则只能标记“规范已定义、部署未验证”。
 
+## vault-adapter-v1 公共合同
+
+公开仓库提供一个不连接保险库、不发起网络请求的合同校验器：
+schemas/vault-adapter-contract.schema.json 与 lib/credential-contract.mjs。
+它只校验合成请求/响应/审计/生命周期记录的形状和部分安全语义，不能证明真实引用存在、目标安全、权限成立或凭据没有在宿主其他输出通道泄露。
+
+四类记录的职责固定如下：
+
+| 记录 | 必须表达 | 明确禁止 |
+| --- | --- | --- |
+| request | contract/version、request id、service/target/operation、opaque credential 与 authorization 引用、受限业务参数、超时、幂等性、重试和强制审计 | 明文 Token、密码、Cookie、私钥、任意 URL/认证头 |
+| response | request/run 关联、稳定状态、side-effect 状态、结果隐私等级、可返回结果或安全错误、脱敏状态、审计引用 | 凭据值、认证头、原始响应、未筛选异常和 outcome_unknown 的成功/失败假象 |
+| audit | 最小 opaque 引用、时间、决策、结果类别、side-effect 状态、结果隐私、脱敏状态和重试次数 | 请求/响应正文、原始 URL、完整异常、密钥或可重建秘密 |
+| lifecycle | vault/adapter/service 责任方、允许操作、引用模型、缓存策略、轮换复核时间、旧引用处置和撤销/缩权/事故事件 | 保险库路径、密文、解锁材料或未经授权的权限扩张 |
+
+合同中的错误类别至少区分：请求/版本无效、引用不可用、策略/目标/操作拒绝、主机身份失败、认证/授权拒绝、超时、限流、服务不可用、响应无法安全筛选、审计不可用、内部错误和结果未知。
+非幂等操作若允许多次尝试，必须带 idempotency: 引用；无法确认副作用或无法写入必要审计时必须保守返回 outcome_unknown，不得要求 Agent 读取或粘贴凭据。
+
+validateVaultContract() 的字段名与合成材料扫描只是第一道门。宿主适配器仍须使用服务/操作专用的允许字段投影，覆盖返回值、异常、stdout/stderr、追踪和崩溃诊断；通用字符串替换不能替代允许字段投影。projectCredentialAuditEvent() 只生成最小审计投影，不复制业务结果或请求参数。
+
 ## GitHub 示例
 
 Agent 需要访问 GitHub 时，向本机已配置的 GitHub adapter 提交仓库和操作参数。Adapter 在本机使用 vault-backed 凭据发起 GitHub API/Git 请求，再返回状态和必要结果。Agent 不获得 Token 字符串；模型提供商仍会看到 Agent 发送的仓库名、请求内容及 adapter 返回的普通数据。

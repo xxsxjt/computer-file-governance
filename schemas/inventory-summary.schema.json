@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/computer-file-governance/inventory-summary-v1.json",
+  "title": "Computer File Governance Inventory Summary",
+  "description": "A private, minimally sufficient contract describing an authorized metadata manifest, its scope, provenance, freshness, and query semantics.",
+  "$defs": {
+    "opaqueRef": {
+      "type": "string",
+      "minLength": 3,
+      "pattern": "^(actor|authorization|collector|manifest|operator|root|snapshot|summary|skip):[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "description": "Typed opaque identifier. A host may resolve it locally; it is not a public machine path or secret."
+    },
+    "rootId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path"],
+      "properties": {
+        "id": { "$ref": "#/$defs/rootId" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Host-local root path or opaque locator. It must remain in the private summary and is not authorization by itself."
+        },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "maxEntries", "maxDepth", "followReparsePoints", "followMounts", "boundaryPolicy", "includedKinds", "includedCount", "skippedCount"],
+      "properties": {
+        "mode": { "enum": ["direct_children", "bounded_recursive", "explicit_entries"] },
+        "maxEntries": { "type": "integer", "minimum": 0 },
+        "maxDepth": { "type": "integer", "minimum": 0 },
+        "followReparsePoints": { "const": false },
+        "followMounts": { "const": false },
+        "boundaryPolicy": { "const": "hold_without_traversal" },
+        "includedKinds": { "type": "array", "uniqueItems": true, "items": { "enum": ["file", "directory", "reparse"] } },
+        "includedCount": { "type": "integer", "minimum": 0 },
+        "skippedCount": { "type": "integer", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "direct_children" } }, "required": ["mode"] },
+          "then": { "properties": { "maxDepth": { "const": 0 } } }
+        }
+      ]
+    },
+    "skip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "count"],
+      "properties": {
+        "reason": { "enum": ["not_authorized", "boundary_hold", "permission_denied", "limit_reached", "collector_error", "owner_excluded", "other"] },
+        "count": { "type": "integer", "minimum": 1 },
+        "ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "operatorRef", "sourceKind", "authorityStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/opaqueRef" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "operatorRef": { "$ref": "#/$defs/opaqueRef" },
+        "sourceKind": { "enum": ["host_collector", "external_tool", "manual_import"] },
+        "authorityStatus": { "enum": ["registered_authority", "published_derivative", "unverified_external", "unverified_host", "conflict_hold"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "sourceKind": { "const": "external_tool" } }, "required": ["sourceKind"] },
+          "then": { "properties": { "authorityStatus": { "enum": ["published_derivative", "unverified_external", "conflict_hold"] } } }
+        },
+        {
+          "if": { "properties": { "sourceKind": { "const": "manual_import" } }, "required": ["sourceKind"] },
+          "then": { "properties": { "authorityStatus": { "enum": ["published_derivative", "unverified_external", "conflict_hold"] } } }
+        },
+        {
+          "if": { "properties": { "sourceKind": { "const": "host_collector" } }, "required": ["sourceKind"] },
+          "then": { "properties": { "authorityStatus": { "enum": ["registered_authority", "unverified_host", "conflict_hold"] } } }
+        }
+      ]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checkedAt", "reasons"],
+      "properties": {
+        "status": { "enum": ["current", "due_soon", "stale", "expired", "unknown"] },
+        "checkedAt": { "type": "string", "format": "date-time" },
+        "maxAgeMs": { "type": "integer", "minimum": 0 },
+        "refreshByUtc": { "type": "string", "format": "date-time" },
+        "sourceRevision": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "reasons": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 160 } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": ["current", "due_soon", "stale", "expired"] } }, "required": ["status"] },
+          "then": { "properties": { "maxAgeMs": { "type": "integer", "minimum": 0 } }, "required": ["maxAgeMs"] }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["stale", "expired", "unknown"] } }, "required": ["status"] },
+          "then": { "properties": { "reasons": { "type": "array", "minItems": 1 } } }
+        }
+      ]
+
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "generatedAtUtc",
+    "validatedAtUtc",
+    "manifestPath",
+    "manifestBytes",
+    "manifestSha256",
+    "manifestEntryCount",
+    "manifestFormat",
+    "querySemantics",
+    "collector",
+    "scope",
+    "roots",
+    "skipped",
+    "freshness"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "snapshotId": { "$ref": "#/$defs/opaqueRef" },
+    "generatedAtUtc": { "type": "string", "format": "date-time" },
+    "validatedAtUtc": { "type": "string", "format": "date-time" },
+    "manifestPath": { "type": "string", "minLength": 1 },
+    "manifestBytes": { "type": "integer", "minimum": 1 },
+    "manifestSha256": { "$ref": "#/$defs/digest" },
+    "manifestEntryCount": { "type": "integer", "minimum": 0 },
+    "manifestFormat": { "enum": ["jsonl", "gzip_jsonl"] },
+    "querySemantics": { "const": "normalized_path_substring_v1" },
+    "collector": { "$ref": "#/$defs/collector" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorizationRef", "authorizedRootIds", "allowedOperations", "coverage"],
+      "properties": {
+        "authorizationRef": {
+          "$ref": "#/$defs/opaqueRef",
+          "description": "Opaque reference to the external task authorization; this record does not establish authorization by itself."
+        },
+        "authorizedRootIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/rootId" } },
+        "allowedOperations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "const": "read_metadata" } },
+        "coverage": { "$ref": "#/$defs/coverage" }
+      }
+    },
+    "roots": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/root" } },
+    "skipped": { "type": "array", "items": { "$ref": "#/$defs/skip" } },
+    "freshness": { "$ref": "#/$defs/freshness" }
+  }
+}

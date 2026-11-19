@@ -1,0 +1,8 @@
+# Synthetic host policy. Review and adapt patterns before using in a real workspace.
+/task/*/temporary/
+/task/*/working/
+/task/*/evidence/
+/cache/
+/private/rollback/
+/private/index/
+/private/manifests/

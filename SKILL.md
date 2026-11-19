@@ -1,6 +1,6 @@
 ---
 name: computer-file-governance
-description: Apply when establishing or using a computer file governance framework: finding files through an authorized index, classifying ownership and lifecycle, keeping Agent workspaces and artifacts in defined locations, reviewing or planning bounded changes, or calling authorized services through a vault-backed adapter without exposing plaintext credentials. This is not a whole-machine auto-organizer.
+description: Apply when establishing or using a whole-machine file governance, shared-information, and unified-index framework: finding files through an authorized index, classifying ownership and lifecycle, keeping Agent workspaces and artifacts in defined locations, reviewing or planning bounded changes, or calling authorized services through a vault-backed adapter without exposing plaintext credentials. It governs the whole machine at the rules and index level, not as an unconditional background auto-organizer.
 license: AGPL-3.0-only
 compatibility: Works with Agent Skills-compatible systems; platform-specific operations require a matching profile and an authorized filesystem or remote-management tool.
 metadata:
@@ -9,7 +9,7 @@ metadata:
 
 # Computer File Governance
 
-Use this Skill as the Agent entry point to a broader governance framework. The framework keeps file rules, searchable indexes, Agent workspace/artifact boundaries, and vault-backed non-plaintext service calls coherent across agents and machines. The objective is an understandable, searchable, ownership-aware working environment; moving or deleting items is optional and never a measure of success by itself. Read [the architecture boundary](docs/architecture.md) and [the artifact lifecycle](docs/artifact-lifecycle.md) before treating any executor as a required path.
+Use this Skill as the Agent entry point to a broader whole-machine governance framework. The primary objective is to make files, workspaces, artifacts, and shareable metadata on one computer follow one set of rules and one searchable index, so people and multiple Agents can find and hand off the same information. The framework also defines workspace/artifact boundaries and optional vault-backed non-plaintext service calls. Moving or deleting items is only a bounded action, never the definition of success. Read [the architecture boundary](docs/architecture.md) and [the artifact lifecycle](docs/artifact-lifecycle.md) before treating any executor as a required path.
 
 ## First-use setup
 

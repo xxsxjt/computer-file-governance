@@ -27,6 +27,10 @@ node bin/cfg-tidy.mjs plan <local-plan.json> --out <local-dry-run.json>
 2. 公开仓库只提交框架、schema、通用文档与合成夹具；本地清单、manifest、日志、会话与凭据保持 ignored。
 3. 批量改名或移动前，先确认工作树干净或变更已单独授权；执行后用同一版本控制状态核对真实后置状态。
 
+## Agent 工作区与产物边界
+
+workspace-host/ 提供一个不含真实数据的 .gitignore 样例；测试会在一次性 Git 工作区中验证临时/过程文件、证据、manifest 与私有索引的隔离。交接记录字段见 schemas/task-handoff.schema.json。
+
 ## 边界检查
 
 - 第三方工具输出不是权威来源；它只能作为 evidence 的一条。

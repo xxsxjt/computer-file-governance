@@ -1,0 +1,26 @@
+{
+  "contractType": "request",
+  "contractVersion": "vault-adapter-v1",
+  "requestId": "request:cli-001",
+  "serviceRef": "service:synthetic",
+  "targetRef": "target:fixture-001",
+  "operationRef": "operation:read",
+  "credentialRef": "credential:synthetic-read",
+  "authorizationRef": "authorization:task-cli-001",
+  "actorRef": "actor:test",
+  "requestedAtUtc": "2026-11-18T20:00:00Z",
+  "parameters": {
+    "resourceRef": "resource:fixture-001"
+  },
+  "policy": {
+    "timeoutMs": 1000,
+    "idempotent": true,
+    "sideEffectMode": "read_only",
+    "retry": {
+      "maxAttempts": 1,
+      "backoffMs": 0,
+      "retryableErrors": []
+    },
+    "auditRequired": true
+  }
+}

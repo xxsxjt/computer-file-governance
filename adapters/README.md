@@ -1,6 +1,6 @@
 # Agent Adapters
 
-本目录描述四类宿主适配器的边界，而不是声称本仓库已经部署了所有适配器：
+本目录描述全机治理与统一索引框架的宿主适配器边界，而不是声称本仓库已经部署了所有适配器。规范接入和索引适配是主线；工作区/产物和 vault-backed 适配器是运营与安全支撑：
 
 1. **规范接入 adapter**：让 Agent 读取唯一规范入口和关联规则。
 2. **索引 adapter**：提供经授权的 metadata manifest、freshness、查询和旧路径/tombstone 语义。
@@ -67,4 +67,9 @@
 
 公开 adapter 实现不得包含真实机器路径、用户身份、远程主机、授权令牌或实际文件清单。
 
+Vault-backed adapter 的公共互操作入口是 vault-adapter-v1 Schema 与 lib/credential-contract.mjs。它定义 request、response、audit、lifecycle 四类记录、稳定错误类别、重试/幂等性和轮换责任的可交换形状；公开代码不实现 vault 解析、缓存、网络请求或真实轮换。适配器能力清单应声明所支持的合同版本、服务/操作和宿主限额，但不得公开真实 endpoint、机器路径或凭据状态。
+
+适配器必须先完成版本、opaque 引用、service/target/operation allowlist、参数允许字段和审计要求校验，再解析凭据。响应、异常、stdout/stderr、追踪和崩溃诊断都属于脱敏边界；无法安全筛选或无法确认副作用时 fail closed，并返回稳定错误类别或 outcome_unknown。审计链只能消费经过安全投影的最小事件，不能直接接收任意请求/响应对象。
+
 只读与可逆的搜索/同步/版本控制共存示例见 [adapters/examples/README.md](examples/README.md)。第三方工具输出只作为 evidence，不覆盖统一规范源；任何变更都必须由任务授权的变更 adapter 产生并保留 manifest，不能把 `cfg-tidy apply` 当作唯一执行路径。
+- 查询默认采用 `normalized_path_substring_v1`：对相对路径做 NFKC、大小写折叠和斜杠规范化后进行字面子串匹配；二级索引只能缩小候选，不能改变结果语义。

@@ -1,0 +1,338 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/computer-file-governance/task-handoff-v1.json",
+  "title": "Computer File Governance Task Handoff",
+  "description": "A path-free, minimally redacted record of task scope, artifact placement, relationships, retention, evidence, and unresolved holds.",
+  "$defs": {
+    "opaqueRef": {
+      "type": "string",
+      "minLength": 3,
+      "pattern": "^(workspace|task|handoff|artifact|source|evidence|rollback|publication|manifest|index|actor):[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+      "description": "Typed opaque identifier only. Physical paths, URLs, names, credentials, and arbitrary free text are not valid references. The host must still resolve and authorize references separately."
+    },
+    "artifactRef": {
+      "type": "string",
+      "pattern": "^artifact:[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "actorRef": {
+      "type": "string",
+      "pattern": "^actor:[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "workspaceRef": {
+      "type": "string",
+      "pattern": "^workspace:[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "taskRef": {
+      "type": "string",
+      "pattern": "^task:[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "referenceList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/opaqueRef" }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition"],
+      "properties": {
+        "condition": {
+          "enum": [
+            "review_on_task_close",
+            "until_release_approved",
+            "until_rollback_window_ends",
+            "rebuildable",
+            "policy_or_owner_review",
+            "retain_indefinitely",
+            "unknown"
+          ]
+        },
+        "review_after": { "type": "string", "format": "date-time" }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliverable_ref", "evidence_ref", "rollback_disposition"],
+      "properties": {
+        "deliverable_ref": { "$ref": "#/$defs/artifactRef" },
+        "evidence_ref": { "$ref": "#/$defs/artifactRef" },
+        "rollback_disposition": { "enum": ["retained", "not_required", "transferred"] },
+        "rollback_ref": { "$ref": "#/$defs/artifactRef" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "rollback_disposition": { "enum": ["retained", "transferred"] } },
+            "required": ["rollback_disposition"]
+          },
+          "then": {
+            "required": ["rollback_ref"],
+            "properties": { "rollback_ref": { "$ref": "#/$defs/artifactRef" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "rollback_disposition": { "const": "not_required" } },
+            "required": ["rollback_disposition"]
+          },
+          "then": { "not": { "required": ["rollback_ref"] } }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_ref",
+        "artifact_kind",
+        "slot",
+        "owner",
+        "privacy",
+        "lifecycle",
+        "state",
+        "created_by",
+        "purpose",
+        "role",
+        "confidence",
+        "retention"
+      ],
+      "properties": {
+        "artifact_ref": { "$ref": "#/$defs/artifactRef" },
+        "artifact_kind": {
+          "enum": ["temporary", "intermediate", "deliverable", "evidence", "rollback", "cache", "private_index", "manifest"]
+        },
+        "slot": {
+          "enum": ["temporary", "working", "deliverables", "evidence", "rollback", "cache", "private_index", "manifest"]
+        },
+        "owner": {
+          "enum": ["personal", "system", "application", "project", "team", "external", "unknown"]
+        },
+        "privacy": { "enum": ["public", "internal", "restricted", "secret", "unknown"] },
+        "lifecycle": {
+          "enum": ["active", "working", "reference", "archive", "rebuildable", "hold", "retired", "unknown"]
+        },
+        "state": { "enum": ["planned", "created", "verified", "held", "unknown"] },
+        "created_by": { "$ref": "#/$defs/actorRef" },
+        "purpose": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "role": {
+          "enum": ["source", "active_work", "reference", "generated", "application_state", "cache", "archive", "inbox", "temporary", "backup", "unknown"]
+        },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "planned_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "source_refs": { "$ref": "#/$defs/referenceList" },
+        "derived_from": { "$ref": "#/$defs/referenceList" },
+        "verifies": { "$ref": "#/$defs/referenceList" },
+        "restores": { "$ref": "#/$defs/referenceList" },
+        "published_as": { "$ref": "#/$defs/referenceList" },
+        "rebuild_from": { "$ref": "#/$defs/referenceList" },
+        "rebuild_method": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "rebuild_tool": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "rebuild_tool_version": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "retention": { "$ref": "#/$defs/retention" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "planned" } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["planned_at"],
+            "properties": { "planned_at": { "type": "string", "format": "date-time" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "enum": ["created", "verified", "held"] } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["created_at"],
+            "properties": { "created_at": { "type": "string", "format": "date-time" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "temporary" } },
+            "required": ["artifact_kind"]
+          },
+          "then": {
+            "properties": {
+              "slot": { "const": "temporary" },
+              "expires_at": { "type": "string", "format": "date-time" },
+              "retention": {
+                "type": "object",
+                "properties": {
+                  "condition": {
+                    "enum": ["review_on_task_close", "until_release_approved", "until_rollback_window_ends", "policy_or_owner_review", "retain_indefinitely"]
+                  },
+                  "review_after": { "type": "string", "format": "date-time" }
+                },
+                "required": ["condition", "review_after"]
+              }
+            },
+            "required": ["expires_at"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "intermediate" } },
+            "required": ["artifact_kind"]
+          },
+          "then": { "properties": { "slot": { "const": "working" } } }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "deliverable" } },
+            "required": ["artifact_kind"]
+          },
+          "then": { "properties": { "slot": { "const": "deliverables" } } }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "evidence" } },
+            "required": ["artifact_kind"]
+          },
+          "then": { "properties": { "slot": { "const": "evidence" } } }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "rollback" } },
+            "required": ["artifact_kind"]
+          },
+          "then": {
+            "properties": {
+              "slot": { "const": "rollback" },
+              "privacy": { "enum": ["internal", "restricted", "secret", "unknown"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "cache" } },
+            "required": ["artifact_kind"]
+          },
+          "then": {
+            "properties": {
+              "slot": { "const": "cache" },
+              "rebuild_from": { "$ref": "#/$defs/referenceList" },
+              "rebuild_method": { "type": "string", "minLength": 1, "maxLength": 240 },
+              "rebuild_tool": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "rebuild_tool_version": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "retention": {
+                "type": "object",
+                "properties": { "condition": { "const": "rebuildable" } },
+                "required": ["condition"]
+              }
+            },
+            "required": ["rebuild_from", "rebuild_method", "rebuild_tool", "rebuild_tool_version"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "private_index" } },
+            "required": ["artifact_kind"]
+          },
+          "then": {
+            "properties": {
+              "slot": { "const": "private_index" },
+              "privacy": { "enum": ["internal", "restricted", "secret", "unknown"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "artifact_kind": { "const": "manifest" } },
+            "required": ["artifact_kind"]
+          },
+          "then": {
+            "properties": {
+              "slot": { "const": "manifest" },
+              "privacy": { "enum": ["internal", "restricted", "secret", "unknown"] }
+            }
+          }
+        }
+      ]
+    },
+    "hold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hold_ref", "reason_code", "blocking", "next_action"],
+      "properties": {
+        "hold_ref": { "$ref": "#/$defs/opaqueRef" },
+        "reason_code": {
+          "enum": ["ownership_unknown", "privacy_unconfirmed", "scope_unconfirmed", "destination_conflict", "link_or_mount", "verification_incomplete", "retention_unconfirmed", "external_dependency", "other"]
+        },
+        "blocking": { "type": "boolean" },
+        "next_action": {
+          "enum": ["confirm_owner", "confirm_privacy", "confirm_scope", "choose_destination", "inspect_boundary", "verify_result", "review_retention", "await_external", "none"]
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["handoff_ref", "workspace_ref", "task_ref", "status", "updated_at", "next_step", "artifacts", "unresolved_holds"],
+  "properties": {
+    "handoff_ref": { "allOf": [{ "$ref": "#/$defs/opaqueRef" }, { "type": "string", "pattern": "^handoff:" }] },
+    "workspace_ref": { "$ref": "#/$defs/workspaceRef" },
+    "task_ref": { "$ref": "#/$defs/taskRef" },
+    "status": { "enum": ["planned", "in_progress", "completed", "blocked", "outcome_unknown"] },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "next_step": { "enum": ["continue", "verify", "review_holds", "await_user", "await_owner", "none"] },
+    "artifacts": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/artifact" } },
+    "unresolved_holds": { "type": "array", "items": { "$ref": "#/$defs/hold" } },
+    "completion": { "$ref": "#/$defs/completion" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "completed" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["completion"],
+        "properties": {
+          "completion": { "$ref": "#/$defs/completion" },
+          "next_step": { "const": "none" },
+          "artifacts": {
+            "type": "array",
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": { "artifact_kind": { "const": "deliverable" }, "state": { "const": "verified" } },
+                  "required": ["artifact_kind", "state"]
+                }
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "artifact_kind": { "const": "evidence" },
+                    "state": { "const": "verified" },
+                    "verifies": { "type": "array", "minItems": 1 }
+                  },
+                  "required": ["artifact_kind", "state", "verifies"]
+                }
+              }
+            ]
+          },
+          "unresolved_holds": {
+            "type": "array",
+            "not": {
+              "contains": {
+                "type": "object",
+                "properties": { "blocking": { "const": true } },
+                "required": ["blocking"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

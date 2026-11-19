@@ -44,4 +44,17 @@ node bin/cfg-tidy.mjs rollback <manifestPath>
 | `CFG_E_SCHEMA_ONLY` | 仅结构校验通过 | 看运行时预检和真实证据 |
 | `CFG_E_REVIEW_ONLY` | 仅建议/候选 | 责任人确认后再单独授权 |
 
+Vault-backed adapter 错误也只返回稳定类别，不透传底层异常或凭据状态细节：
+
+| 码 | 含义 | 下一步 |
+| --- | --- | --- |
+| CFG_E_CRED_INVALID_REQUEST / CFG_E_CRED_UNSUPPORTED_VERSION | 请求或合同版本无效 | 修正合同；不要改用明文凭据 |
+| CFG_E_CRED_REFERENCE_UNAVAILABLE | opaque 凭据引用不可用 | 由 vault 所有者检查引用，不要粘贴密钥 |
+| CFG_E_CRED_POLICY_DENIED / CFG_E_CRED_TARGET_DENIED / CFG_E_CRED_OPERATION_DENIED | 策略、目标或操作 allowlist 拒绝 | 停止并由责任方登记明确范围 |
+| CFG_E_CRED_HOST_UNTRUSTED | 主机身份未通过 | 保持 fail closed，核验宿主和网络边界 |
+| CFG_E_CRED_AUTH_DENIED / CFG_E_CRED_AUTHZ_DENIED | 服务认证或业务授权拒绝 | 由服务/vault 所有者检查，不输出凭据 |
+| CFG_E_CRED_TIMEOUT / CFG_E_CRED_RATE_LIMITED / CFG_E_CRED_SERVICE_UNAVAILABLE | 超时、限流或服务不可用 | 按幂等性、retryAfter 和副作用状态决定 |
+| CFG_E_CRED_UNSAFE_RESPONSE / CFG_E_CRED_AUDIT_UNAVAILABLE | 输出无法安全筛选或审计不可用 | 丢弃未筛选输出并停止调用 |
+| CFG_E_CRED_OUTCOME_UNKNOWN | 无法确认副作用或最终状态 | 先核对宿主后置状态，再决定重试/补偿 |
+
 开发者可通过 `lib/user-report.mjs` 的 `describeError(code)` 与 `summarizeResult(result)` 把低层结果转换成人类可读摘要；本地路径展示可用 `humanizePathForReport()` 限制长度。

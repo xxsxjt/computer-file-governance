@@ -33,11 +33,29 @@ test("package, lockfile, and skill metadata versions agree", async () => {
 test("schemas publish stable and distinct contract ids", async () => {
   const index = await readJson("schemas/index-record.schema.json");
   const transaction = await readJson("schemas/transaction-manifest.schema.json");
+  const handoff = await readJson("schemas/task-handoff.schema.json");
+  const inventory = await readJson("schemas/inventory-summary.schema.json");
+  const vault = await readJson("schemas/vault-adapter-contract.schema.json");
   assert.match(index.$id, /^https:\/\//);
   assert.match(transaction.$id, /^https:\/\//);
+  assert.match(handoff.$id, /^https:\/\//);
   assert.notEqual(index.$id, transaction.$id);
+  assert.notEqual(index.$id, handoff.$id);
+  assert.notEqual(transaction.$id, handoff.$id);
+  assert.match(inventory.$id, /^https:\/\//);
+  assert.match(vault.$id, /^https:\/\//);
+  assert.notEqual(inventory.$id, index.$id);
+  assert.notEqual(inventory.$id, transaction.$id);
+  assert.notEqual(inventory.$id, handoff.$id);
+  assert.notEqual(vault.$id, index.$id);
+  assert.notEqual(vault.$id, transaction.$id);
+  assert.notEqual(vault.$id, handoff.$id);
+  assert.notEqual(vault.$id, inventory.$id);
+  assert.match(inventory.$id, /inventory-summary-v1\.json$/);
   assert.match(index.$id, /index-record-v1\.json$/);
   assert.match(transaction.$id, /transaction-manifest-v1\.json$/);
+  assert.match(handoff.$id, /task-handoff-v1\.json$/);
+  assert.match(vault.$id, /vault-adapter-contract-v1\.json$/);
 });
 
 test("maturity criteria define product boundary, users, metrics, and gates", async () => {

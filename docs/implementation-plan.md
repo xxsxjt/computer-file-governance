@@ -1,6 +1,6 @@
 # 逐步执行清单
 
-本文是公开仓库中的通用执行合同，不是本机实时状态。项目按四层推进：文件治理规范、统一索引与查找、Agent 工作区/产物边界、vault-backed 非明文调用。当前状态、证据和阻塞项写入被忽略的本地台账 private/execution-ledger.local.md；该台账以及真实清单、事务证据、会话记录不得进入 Git。每批只推进一个可验证步骤，先备份、再小范围修改、再测试、再记录，避免凭记忆跳项。
+本文是公开仓库中的通用执行合同，不是本机实时状态。项目主线是“全机文件治理规范 + 信息共享/统一索引”，并由 Agent 工作区/产物边界和 vault-backed 非明文调用提供运营与安全支撑。当前状态、证据和阻塞项写入被忽略的本地台账 private/execution-ledger.local.md；该台账以及真实清单、事务证据、会话记录不得进入 Git。每批只推进一个可验证步骤，先备份、再小范围修改、再测试、再记录，避免凭记忆跳项。
 
 > 勾选仅表示对应公开框架合同已交付；本机实时状态与证据不写入本仓库。
 
@@ -18,6 +18,15 @@
 - **参考实现**：本仓库中可运行的校验、索引、报告和事务代码；不等于宿主已接入真实机器。
 - **宿主适配器**：连接具体目录、清单采集、工作区、vault 或服务的外部实现；未验证前不能写成已部署。
 - **可选变更路径**：cfg-tidy 的 plan/apply/rollback 只在任务确实需要文件变更且已有具体授权时使用，不是采用本框架的必经流程。
+
+## 主线与支撑关系
+
+- **主线 A：全机文件治理规范**。先定义目录职责、分类、命名、所有权、隐私、生命周期、权威位置、回滚和公开/私有分流。
+- **主线 B：信息共享与统一索引**。让人和多个 Agent 使用同一套 manifest、共享元数据、freshness、tombstone、查询和交接语义；索引必须可重建、可解释，真实数据留在宿主边界内。
+- **运营支撑：Agent 工作区与产物边界**。防止临时文件、中间产物、交付物、证据和回滚副本散落或互相污染。
+- **安全支撑：vault-backed 非明文调用**。让已授权服务调用不暴露密钥明文；它不能替代全机治理和统一索引，也不应成为主线进度的衡量标准。
+
+因此，宿主 Vault canary 只是安全支撑项；主线下一步应优先完成授权范围内的索引闭环和宿主接入，而不是把整个项目等同于“宿主验证”。
 
 ## P0 契约补全
 
@@ -40,14 +49,14 @@
 
 ## P1-W 工作区与产物边界
 
-- [ ] P1-W1 逻辑槽位合同：定义 temporary、intermediate、deliverable、evidence、rollback、cache、private_index、manifest 的语义、默认落点、命名、保留和清理边界；见 docs/artifact-lifecycle.md。
-- [ ] P1-W2 任务交接字段：为 workspace_ref、task_ref、artifact_kind、source_refs、derived_from、verifies、restores、published_as、retention 和 unresolved holds 规定最小脱敏记录格式；不得把真实路径或秘密写入公开夹具。
-- [ ] P1-W3 宿主验证：至少在一个公开/非敏感示例宿主上验证“临时文件不进交付物、证据不进源树、manifest/index 不进 Git”的检查；未验证前不宣称 Agent 产物管理已部署。
+- [x] P1-W1 逻辑槽位合同：定义 temporary、intermediate、deliverable、evidence、rollback、cache、private_index、manifest 的语义、默认落点、命名、保留和清理边界；见 docs/artifact-lifecycle.md。（规范与 Schema 槽位映射已核对）
+- [x] P1-W2 任务交接字段：为 workspace_ref、task_ref、artifact_kind、source_refs、derived_from、verifies、restores、published_as、retention 和 unresolved holds 规定最小脱敏记录格式；不得把真实路径或秘密写入公开夹具。（task-handoff-v1 Schema、语义校验器与合成夹具）
+- [x] P1-W3 宿主验证：至少在一个公开/非敏感示例宿主上验证“临时文件不进交付物、证据不进源树、manifest/index 不进 Git”的检查；未验证前不宣称 Agent 产物管理已部署。（一次性合成 Git 宿主测试通过；未验证任何真实主机或部署）
 
 ## P1-I 统一索引适配边界
 
-- [ ] P1-I1 清单输入合同：明确采集器是可选宿主适配器；输入必须标明授权根、覆盖边界、跳过项、生成时间、采集器/操作者、摘要和 freshness，不把外部工具输出自动视为权威。
-- [ ] P1-I2 查询一致性：统一 token、路径片段和大小写/规范化语义；stale、tombstone、hold 和旧路径结果必须可解释。
+- [x] P1-I1 清单输入合同：明确采集器是可选宿主适配器；输入必须标明授权根、覆盖边界、跳过项、生成时间、采集器/操作者、摘要和 freshness，不把外部工具输出自动视为权威。（inventory-summary-v1 Schema、跨字段语义校验与合成正反例）
+- [x] P1-I2 查询一致性：统一 token、路径片段和大小写/规范化语义；stale、tombstone、hold 和旧路径结果必须可解释。（线性/二级索引共用 NFKC、大小写折叠、斜杠规范化和路径子串语义；n-gram 仅作候选；JSONL/gzip JSONL、旧路径/hold/tombstone 合成测试）
 - [ ] P1-I3 首个受控试点：仅在用户另行点名非敏感根和范围后，运行只读 bounded manifest；不读正文、不移动、不删除，证据留在 ignored 本地位置。
 
 ## P2 工程与企业化
@@ -58,9 +67,9 @@
 
 ## P2-V Vault-backed 调用合同
 
-- [ ] P2-V1 最小请求/响应合同：adapter 只接受非秘密业务参数和 opaque credential reference；明确 service/target、operation allowlist、超时、重试和错误分类。
-- [ ] P2-V2 脱敏与审计：凭据值、认证头、解析输出和含秘密调试信息不得进入 Agent、模型、文件或日志；普通业务结果按其自身 privacy 分类；审计只记录最小 opaque 引用和结果状态。
-- [ ] P2-V3 生命周期责任：明确 vault、适配器和服务所有者的轮换、撤销、失效、权限缩减和 incident 处理责任；规范不虚构仓库内 vault 实现。
+- [x] P2-V1 最小请求/响应合同：vault-adapter-v1 Schema 与纯函数校验器固定非秘密参数、opaque 引用、service/target/operation、超时、重试、幂等性和稳定错误类别。（公开合同检查点；不等于真实 adapter 部署）
+- [x] P2-V2 脱敏与审计：合同拒绝常见凭据字段/材料，响应明确结果隐私与脱敏状态，安全审计投影只保留最小引用和结果状态，并以合成哨兵测试回归。（公开合同检查点；宿主输出通道仍需验证）
+- [x] P2-V3 生命周期责任：生命周期记录固定 vault/adapter/service 责任方、引用模型、缓存策略、轮换复核、旧引用处置、撤销/缩权/事故事件和失效状态。（公开合同检查点；不虚构仓库内 vault 实现）
 - [ ] P2-V4 宿主验证：只有在当前宿主完成适配器配置并通过不含秘密的 canary/contract test 后，才能把 vault 能力标为已部署；否则标为“规范已定义、部署未验证”。
 
 ## P3 宿主对齐与发布决策
