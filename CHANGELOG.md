@@ -4,6 +4,7 @@ All notable changes to the public framework are recorded here. Local inventories
 
 ## Unreleased
 
+- Defined the distinction between advisory coordination claims, expiring leases, and enforced mutual exclusion; documented stale-state limits, atomic conflict checks, owner-checked release, fail-closed behavior, and required concurrency tests without claiming host deployment.
 - Clarified that the project is a whole-machine file-governance, shared-information, and unified-index framework rather than an unconditional background auto-organizer or a single Agent Skill.
 - Added architecture and Agent artifact lifecycle contracts for indexes, workspaces, deliverables, evidence, rollback material, caches, manifests, and private indexes.
 - Clarified that vault-backed credential use is a host adapter contract; the public package does not include a vault, plaintext credential, or fictional credential CLI.

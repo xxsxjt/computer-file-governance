@@ -59,6 +59,12 @@
 - [x] P1-I2 查询一致性：统一 token、路径片段和大小写/规范化语义；stale、tombstone、hold 和旧路径结果必须可解释。（线性/二级索引共用 NFKC、大小写折叠、斜杠规范化和路径子串语义；n-gram 仅作候选；JSONL/gzip JSONL、旧路径/hold/tombstone 合成测试）
 - [ ] P1-I3 首个受控试点：仅在用户另行点名非敏感根和范围后，运行只读 bounded manifest；不读正文、不移动、不删除，证据留在 ignored 本地位置。
 
+## P1-C 跨会话写入协调
+
+- [x] P1-C1 术语与保证分级：明确协作声明、租约、强制互斥的不同保证；status 不把登记存在误报为 owner 在线或文件受保护。（见 docs/supervisor-orchestration-design.md；仅为公开合同）
+- [ ] P1-C2 租约与冲突语义：定义 owner/generation、scope 规范化和重叠规则、心跳/过期、接管、compare-and-release、原子存储及失败关闭语义；为状态查询和事件审计定版 Schema。
+- [ ] P1-C3 宿主验证：在合成与获授权宿主分别验证并发竞争、崩溃、过期接管、旧持有者释放、丢更新、门禁绕过和故障关闭。若所有写入者不能经过同一门禁，只能标记为 advisory claim，不得声称强制互斥。
+
 ## P2 工程与企业化
 
 - [x] P2-1 发布工程：CI、tag/release、CHANGELOG、SECURITY、CONTRIBUTING、CODEOWNERS、许可证与第三方来源核查。（框架合同检查点；本机实时状态见本地台账）
